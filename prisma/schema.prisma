@@ -1,0 +1,56 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  output   = "node_modules/.prisma/client"
+}
+
+model Company {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  companyName   String      @db.Text
+  cvr           String      @db.Text
+  employees     Int
+  contactPerson String      @db.Text
+  email         String      @db.Text
+  
+  kreditorliste FileUpload?
+  
+  ipAddress     String?     @db.VarChar(45)
+  userAgent     String?     @db.Text
+  status        Status      @default(PENDING)
+  
+  @@index([status])
+  @@map("companies")
+}
+
+model FileUpload {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now())
+  
+  fileName    String    @db.VarChar(255)
+  fileSize    Int
+  mimeType    String    @db.VarChar(100)
+  filePath    String    @db.Text
+  
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   String    @unique
+  
+  @@index([createdAt])
+  @@index([companyId])
+  @@map("file_uploads")
+}
+
+enum Status {
+  PENDING
+  PROCESSING
+  COMPLETED
+  ERROR
+}
