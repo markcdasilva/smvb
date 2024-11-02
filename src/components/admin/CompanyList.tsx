@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/auth';
-import { Download, Pencil, Eye, Search } from 'lucide-react';
+import { Download, Pencil, Eye, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { decrypt } from '../../lib/encryption';
 import { ViewEditModal } from './ViewEditModal';
 
@@ -21,6 +21,9 @@ interface Company {
   } | null;
 }
 
+type SortField = 'index' | 'created_at' | 'company_name' | 'cvr' | 'employees' | 'contact_person' | 'email' | 'data_period_start';
+type SortDirection = 'asc' | 'desc';
+
 export function CompanyList() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +32,8 @@ export function CompanyList() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('index');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const fetchCompanies = async () => {
     try {
@@ -60,8 +65,9 @@ export function CompanyList() {
         return;
       }
 
-      const decryptedData = data.map(company => ({
+      const decryptedData = data.map((company, index) => ({
         ...company,
+        index: data.length - index, // Add index in reverse order
         company_name: decrypt(company.company_name),
         cvr: decrypt(company.cvr),
         contact_person: decrypt(company.contact_person),
@@ -96,6 +102,32 @@ export function CompanyList() {
     };
   }, []);
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortCompanies = (a: any, b: any) => {
+    const direction = sortDirection === 'asc' ? 1 : -1;
+    
+    if (sortField === 'index') {
+      return (a.index - b.index) * direction;
+    }
+    
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+
+    if (typeof aValue === 'string') {
+      return aValue.localeCompare(bValue) * direction;
+    }
+    
+    return (aValue - bValue) * direction;
+  };
+
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
       const { data, error: downloadError } = await supabase.storage
@@ -118,6 +150,13 @@ export function CompanyList() {
     }
   };
 
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4 inline-block ml-1" /> : 
+      <ChevronDown className="w-4 h-4 inline-block ml-1" />;
+  };
+
   const handleView = (company: Company) => {
     setSelectedCompany(company);
     setIsEditing(false);
@@ -130,11 +169,15 @@ export function CompanyList() {
     setIsModalOpen(true);
   };
 
-  const filteredCompanies = companies.filter(company => 
-    searchTerm === '' || 
-    company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCompanies = companies
+    .filter(company => 
+      searchTerm === '' || 
+      company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.cvr.includes(searchTerm) ||
+      company.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort(sortCompanies);
 
   return (
     <div className="space-y-6">
@@ -142,10 +185,10 @@ export function CompanyList() {
         <div className="relative">
           <input
             type="text"
-            placeholder="Søg efter virksomhed eller ID..."
+            placeholder="Søg efter virksomhed, CVR, kontakt..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 w-64"
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 w-80"
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
         </div>
@@ -175,14 +218,47 @@ export function CompanyList() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('index')}
+                >
+                  #<SortIcon field="index" />
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Dato
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('created_at')}
+                >
+                  Dato<SortIcon field="created_at" />
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Virksomhed
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('company_name')}
+                >
+                  Virksomhed<SortIcon field="company_name" />
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('cvr')}
+                >
+                  CVR<SortIcon field="cvr" />
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('contact_person')}
+                >
+                  Kontaktperson<SortIcon field="contact_person" />
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('email')}
+                >
+                  Email<SortIcon field="email" />
                 </th>
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">Handlinger</span>
@@ -192,13 +268,13 @@ export function CompanyList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                     Indlæser...
                   </td>
                 </tr>
               ) : filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                     Ingen virksomheder fundet
                   </td>
                 </tr>
@@ -206,7 +282,7 @@ export function CompanyList() {
                 filteredCompanies.map((company) => (
                   <tr key={company.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {company.id.slice(0, 8)}...
+                      #{company.index}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(company.created_at).toLocaleDateString('da-DK', {
@@ -221,6 +297,15 @@ export function CompanyList() {
                       <div className="text-sm font-medium text-gray-900">
                         {company.company_name}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {company.cvr}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {company.contact_person}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {company.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-4">
@@ -268,6 +353,7 @@ export function CompanyList() {
           company={selectedCompany}
           isEditing={isEditing}
           onSave={fetchCompanies}
+          onDownload={handleDownload}
         />
       )}
     </div>
