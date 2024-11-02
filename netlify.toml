@@ -7,6 +7,19 @@
   to = "/index.html"
   status = 200
 
-[build.environment]
-  VITE_SUPABASE_URL = "https://zgoxbcxwlndzloyonbon.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpnb3hiY3h3bG5kemxveW9uYm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA0MDUwMDQsImV4cCI6MjA0NTk4MTAwNH0.-xvzk8FISTRkSn7_ysUJHoZs4UTAafp-2hrerpsxm40"
+# Force HTTPS
+[[redirects]]
+  from = "http://*"
+  to = "https://:splat"
+  status = 301
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Content-Security-Policy = "default-src 'self' https://zgoxbcxwlndzloyonbon.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://zgoxbcxwlndzloyonbon.supabase.co wss://zgoxbcxwlndzloyonbon.supabase.co;"

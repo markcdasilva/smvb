@@ -1,32 +1,80 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database } from './database.types';
+import type { Database } from './database.types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const siteUrl = import.meta.env.VITE_SITE_URL || 'http://localhost:5173';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage,
+    storageKey: 'smvb-auth-token',
+    redirectTo: `${siteUrl}/admin/login`
+  }
+});
 
 export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  console.log('Attempting sign in with:', { email });
   
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
+
+    console.log('Sign in successful:', data);
+    return data;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    throw error;
+  }
 };
 
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+    
+    // Clear any stored session data
+    window.localStorage.removeItem('smvb-auth-token');
+  } catch (error) {
+    console.error('Sign out error:', error);
+    throw error;
+  }
 };
 
 export const getSession = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return session;
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Get session error:', error);
+      throw error;
+    }
+
+    return session;
+  } catch (error) {
+    console.error('Session retrieval error:', error);
+    throw error;
+  }
 };
+
+// Add session state change listener
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state changed:', { event, session });
+});
