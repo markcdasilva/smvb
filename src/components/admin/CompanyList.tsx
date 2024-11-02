@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/auth';
-import { Download, Pencil, Eye, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { supabase } from '../../lib/supabase-client';
+import { Download, Trash2, Eye, Filter, RefreshCw, Edit, X } from 'lucide-react';
 import { decrypt } from '../../lib/encryption';
 import { ViewEditModal } from './ViewEditModal';
 
 interface Company {
   id: string;
   created_at: string;
+  updated_at: string;
   company_name: string;
   cvr: string;
   employees: number;
@@ -14,15 +15,15 @@ interface Company {
   email: string;
   data_period_start: string;
   data_period_end: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'ERROR';
   file_uploads?: {
     id: string;
     file_name: string;
     file_path: string;
   } | null;
 }
-
-type SortField = 'index' | 'created_at' | 'company_name' | 'cvr' | 'employees' | 'contact_person' | 'email' | 'data_period_start';
-type SortDirection = 'asc' | 'desc';
 
 export function CompanyList() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -32,20 +33,16 @@ export function CompanyList() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [sortField, setSortField] = useState<SortField>('index');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Company;
+    direction: 'asc' | 'desc';
+  }>({ key: 'created_at', direction: 'desc' });
 
   const fetchCompanies = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No active session found');
-      }
-
       const { data, error: fetchError } = await supabase
         .from('companies')
         .select(`
@@ -65,9 +62,8 @@ export function CompanyList() {
         return;
       }
 
-      const decryptedData = data.map((company, index) => ({
+      const decryptedData = data.map(company => ({
         ...company,
-        index: data.length - index, // Add index in reverse order
         company_name: decrypt(company.company_name),
         cvr: decrypt(company.cvr),
         contact_person: decrypt(company.contact_person),
@@ -76,7 +72,7 @@ export function CompanyList() {
 
       setCompanies(decryptedData);
     } catch (err: any) {
-      console.error('Error in fetchCompanies:', err);
+      console.error('Error fetching companies:', err);
       setError(err.message || 'Failed to fetch companies');
     } finally {
       setLoading(false);
@@ -102,32 +98,6 @@ export function CompanyList() {
     };
   }, []);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const sortCompanies = (a: any, b: any) => {
-    const direction = sortDirection === 'asc' ? 1 : -1;
-    
-    if (sortField === 'index') {
-      return (a.index - b.index) * direction;
-    }
-    
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-
-    if (typeof aValue === 'string') {
-      return aValue.localeCompare(bValue) * direction;
-    }
-    
-    return (aValue - bValue) * direction;
-  };
-
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
       const { data, error: downloadError } = await supabase.storage
@@ -150,34 +120,61 @@ export function CompanyList() {
     }
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return null;
-    return sortDirection === 'asc' ? 
-      <ChevronUp className="w-4 h-4 inline-block ml-1" /> : 
-      <ChevronDown className="w-4 h-4 inline-block ml-1" />;
+  const handleDelete = async (id: string) => {
+    if (!confirm('Er du sikker på, at du vil slette denne virksomhed? Dette kan ikke fortrydes.')) {
+      return;
+    }
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      setCompanies(companies.filter(company => company.id !== id));
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      alert('Kunne ikke slette virksomheden. Prøv igen senere.');
+    }
   };
 
-  const handleView = (company: Company) => {
-    setSelectedCompany(company);
-    setIsEditing(false);
-    setIsModalOpen(true);
+  const handleSort = (key: keyof Company) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
   };
 
-  const handleEdit = (company: Company) => {
-    setSelectedCompany(company);
-    setIsEditing(true);
-    setIsModalOpen(true);
-  };
+  const sortedCompanies = [...companies].sort((a, b) => {
+    if (sortConfig.key === 'created_at') {
+      return sortConfig.direction === 'asc'
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
 
-  const filteredCompanies = companies
-    .filter(company => 
-      searchTerm === '' || 
-      company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortConfig.direction === 'asc'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+
+    return 0;
+  });
+
+  const filteredCompanies = sortedCompanies.filter(company => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      company.company_name.toLowerCase().includes(searchLower) ||
       company.cvr.includes(searchTerm) ||
-      company.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort(sortCompanies);
+      company.email.toLowerCase().includes(searchLower) ||
+      company.contact_person.toLowerCase().includes(searchLower)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -185,31 +182,29 @@ export function CompanyList() {
         <div className="relative">
           <input
             type="text"
-            placeholder="Søg efter virksomhed, CVR, kontakt..."
+            placeholder="Søg..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 w-80"
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
         </div>
 
         <button
           onClick={fetchCompanies}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
         >
-          Opdater liste
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Opdater
         </button>
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <p>{error}</p>
-          <button 
-            onClick={fetchCompanies}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-          >
-            Prøv igen
-          </button>
+          <div className="flex items-center">
+            <X className="w-5 h-5 mr-2" />
+            <span>{error}</span>
+          </div>
         </div>
       )}
 
@@ -218,47 +213,26 @@ export function CompanyList() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('index')}
+                  onClick={() => handleSort('id')}
                 >
-                  #<SortIcon field="index" />
+                  #
                 </th>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('created_at')}
                 >
-                  Dato<SortIcon field="created_at" />
+                  Dato
                 </th>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('company_name')}
                 >
-                  Virksomhed<SortIcon field="company_name" />
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('cvr')}
-                >
-                  CVR<SortIcon field="cvr" />
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('contact_person')}
-                >
-                  Kontaktperson<SortIcon field="contact_person" />
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('email')}
-                >
-                  Email<SortIcon field="email" />
+                  Virksomhed
                 </th>
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">Handlinger</span>
@@ -268,21 +242,21 @@ export function CompanyList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
                     Indlæser...
                   </td>
                 </tr>
               ) : filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
                     Ingen virksomheder fundet
                   </td>
                 </tr>
               ) : (
-                filteredCompanies.map((company) => (
+                filteredCompanies.map((company, index) => (
                   <tr key={company.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      #{company.index}
+                      {index + 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(company.created_at).toLocaleDateString('da-DK', {
@@ -294,43 +268,48 @@ export function CompanyList() {
                       })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {company.company_name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {company.cvr}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {company.contact_person}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {company.email}
+                      <div className="text-sm font-medium text-gray-900">{company.company_name}</div>
+                      <div className="text-sm text-gray-500">CVR: {company.cvr}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-4">
+                      <div className="flex items-center justify-end space-x-3">
                         {company.file_uploads && (
                           <button
                             onClick={() => handleDownload(company.file_uploads!.file_path, company.file_uploads!.file_name)}
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                            className="text-blue-600 hover:text-blue-900"
                             title="Download fil"
                           >
                             <Download className="w-5 h-5" />
                           </button>
                         )}
-                        <button 
-                          onClick={() => handleView(company)}
-                          className="text-gray-600 hover:text-gray-900 transition-colors"
+                        <button
+                          onClick={() => {
+                            setSelectedCompany(company);
+                            setIsModalOpen(true);
+                            setIsEditing(false);
+                          }}
+                          className="text-gray-600 hover:text-gray-900"
                           title="Vis detaljer"
                         >
                           <Eye className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => handleEdit(company)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                          onClick={() => {
+                            setSelectedCompany(company);
+                            setIsModalOpen(true);
+                            setIsEditing(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-900"
                           title="Rediger"
                         >
-                          <Pencil className="w-5 h-5" />
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(company.id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Slet"
+                        >
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
