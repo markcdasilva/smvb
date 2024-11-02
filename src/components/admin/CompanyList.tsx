@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase-client';
+import { supabase } from '../../lib/auth'; // Use auth instance instead of supabase-client
 import { Download, Trash2, Eye, Filter, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 import { decrypt } from '../../lib/encryption';
 
@@ -46,8 +46,16 @@ export function CompanyList() {
       setError(null);
       
       console.log('Fetching companies...');
-      console.log('Using Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
       
+      // First, check if we have an active session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session found');
+      }
+
+      console.log('Session found, fetching data...');
+
       const { data, error: fetchError } = await supabase
         .from('companies')
         .select(`
@@ -83,7 +91,7 @@ export function CompanyList() {
           };
         } catch (decryptError) {
           console.error('Decryption error for company:', company.id, decryptError);
-          return company; // Return raw data if decryption fails
+          return company;
         }
       });
 
@@ -116,7 +124,7 @@ export function CompanyList() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [statusFilter]);
+  }, []);
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
@@ -174,13 +182,15 @@ export function CompanyList() {
   };
 
   const filteredCompanies = companies.filter(company => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      company.company_name.toLowerCase().includes(searchLower) ||
+    const matchesSearch = searchTerm === '' || 
+      company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.cvr.includes(searchTerm) ||
-      company.email.toLowerCase().includes(searchLower) ||
-      company.contact_person.toLowerCase().includes(searchLower)
-    );
+      company.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.contact_person.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || company.status.toLowerCase() === statusFilter.toLowerCase();
+
+    return matchesSearch && matchesStatus;
   });
 
   return (
