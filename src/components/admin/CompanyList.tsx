@@ -65,13 +65,14 @@ export function CompanyList() {
         return;
       }
 
+      // Decrypt the sensitive data
       const decryptedData = data.map((company, index) => ({
         ...company,
-        index: data.length - index, // Add index in reverse order
-        company_name: decrypt(company.company_name),
-        cvr: decrypt(company.cvr),
-        contact_person: decrypt(company.contact_person),
-        email: decrypt(company.email),
+        index: data.length - index,
+        company_name: company.company_name ? decrypt(company.company_name) : '',
+        cvr: company.cvr ? decrypt(company.cvr) : '',
+        contact_person: company.contact_person ? decrypt(company.contact_person) : '',
+        email: company.email ? decrypt(company.email) : ''
       }));
 
       setCompanies(decryptedData);
