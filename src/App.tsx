@@ -11,7 +11,6 @@ import { Footer } from './components/Footer';
 import { LoginPage } from './components/admin/LoginPage';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { CompanyList } from './components/admin/CompanyList';
-import { DownloadButton } from './components/DownloadButton';
 import { useAuth } from './hooks/useAuth';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -61,7 +60,6 @@ function HomePage() {
         <Contact />
         <Footer />
       </div>
-      <DownloadButton />
     </div>
   );
 }
