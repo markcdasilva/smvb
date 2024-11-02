@@ -65,15 +65,25 @@ export function CompanyList() {
         return;
       }
 
-      // Decrypt the sensitive data
-      const decryptedData = data.map((company, index) => ({
-        ...company,
-        index: data.length - index,
-        company_name: company.company_name ? decrypt(company.company_name) : '',
-        cvr: company.cvr ? decrypt(company.cvr) : '',
-        contact_person: company.contact_person ? decrypt(company.contact_person) : '',
-        email: company.email ? decrypt(company.email) : ''
-      }));
+      console.log('Raw company data:', data); // Debug log
+
+      const decryptedData = data.map((company, index) => {
+        try {
+          const decrypted = {
+            ...company,
+            index: data.length - index,
+            company_name: decrypt(company.company_name),
+            cvr: decrypt(company.cvr),
+            contact_person: decrypt(company.contact_person),
+            email: decrypt(company.email)
+          };
+          console.log('Decrypted company:', decrypted); // Debug log
+          return decrypted;
+        } catch (error) {
+          console.error('Failed to decrypt company data:', error);
+          return company;
+        }
+      });
 
       setCompanies(decryptedData);
     } catch (err: any) {
