@@ -23,7 +23,7 @@ export interface Database {
           data_period_end: string
           ip_address: string | null
           user_agent: string | null
-          status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'ERROR'
+          status: 'INCOMPLETE' | 'COMPLETE'
         }
         Insert: {
           id?: string
@@ -38,7 +38,7 @@ export interface Database {
           data_period_end: string
           ip_address?: string | null
           user_agent?: string | null
-          status?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'ERROR'
+          status?: 'INCOMPLETE' | 'COMPLETE'
         }
         Update: {
           id?: string
@@ -53,7 +53,7 @@ export interface Database {
           data_period_end?: string
           ip_address?: string | null
           user_agent?: string | null
-          status?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'ERROR'
+          status?: 'INCOMPLETE' | 'COMPLETE'
         }
       }
       file_uploads: {
@@ -93,7 +93,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      status: 'INCOMPLETE' | 'COMPLETE'
     }
   }
 }
