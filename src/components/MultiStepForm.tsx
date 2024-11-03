@@ -28,8 +28,10 @@ export function MultiStepForm() {
     setData(prev => {
       const newData = { ...prev, ...fields };
       
+      // If start date is updated, adjust end date
       if (fields.dataPeriodStart) {
-        const endDate = new Date(fields.dataPeriodStart);
+        const startDate = new Date(fields.dataPeriodStart);
+        const endDate = new Date(startDate);
         endDate.setFullYear(endDate.getFullYear() + 1);
         endDate.setDate(endDate.getDate() - 1);
         newData.dataPeriodEnd = endDate;
@@ -41,14 +43,22 @@ export function MultiStepForm() {
 
   const saveToSupabase = async () => {
     try {
+      const startDate = data.dataPeriodStart instanceof Date 
+        ? data.dataPeriodStart.toISOString().split('T')[0]
+        : new Date(data.dataPeriodStart).toISOString().split('T')[0];
+
+      const endDate = data.dataPeriodEnd instanceof Date
+        ? data.dataPeriodEnd.toISOString().split('T')[0]
+        : new Date(data.dataPeriodEnd).toISOString().split('T')[0];
+
       const stepData = {
         company_name: encrypt(data.companyName),
         cvr: encrypt(data.cvr),
         employees: data.employees,
         contact_person: encrypt(data.contactPerson),
         email: encrypt(data.email),
-        data_period_start: data.dataPeriodStart.toISOString().split('T')[0],
-        data_period_end: data.dataPeriodEnd.toISOString().split('T')[0],
+        data_period_start: startDate,
+        data_period_end: endDate,
         ip_address: window.location.hostname,
         user_agent: navigator.userAgent,
         status: 'INCOMPLETE'
