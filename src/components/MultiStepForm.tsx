@@ -12,8 +12,8 @@ const INITIAL_DATA: CompanyData = {
   employees: 0,
   contactPerson: '',
   email: '',
-  dataPeriodStart: new Date(),
-  dataPeriodEnd: new Date(),
+  dataPeriodStart: new Date(''),  // Initialize as invalid date
+  dataPeriodEnd: new Date(''),    // Initialize as invalid date
   status: 'INCOMPLETE'
 };
 
@@ -43,26 +43,23 @@ export function MultiStepForm() {
 
   const saveToSupabase = async () => {
     try {
-      const startDate = data.dataPeriodStart instanceof Date 
-        ? data.dataPeriodStart.toISOString().split('T')[0]
-        : new Date(data.dataPeriodStart).toISOString().split('T')[0];
-
-      const endDate = data.dataPeriodEnd instanceof Date
-        ? data.dataPeriodEnd.toISOString().split('T')[0]
-        : new Date(data.dataPeriodEnd).toISOString().split('T')[0];
-
-      const stepData = {
+      // Only include dates if they are valid
+      const stepData: any = {
         company_name: encrypt(data.companyName),
         cvr: encrypt(data.cvr),
         employees: data.employees,
         contact_person: encrypt(data.contactPerson),
         email: encrypt(data.email),
-        data_period_start: startDate,
-        data_period_end: endDate,
         ip_address: window.location.hostname,
         user_agent: navigator.userAgent,
         status: 'INCOMPLETE'
       };
+
+      // Only add dates if we're on step 3 or if valid dates exist
+      if (currentStep === 2 || (data.dataPeriodStart && !isNaN(data.dataPeriodStart.getTime()))) {
+        stepData.data_period_start = data.dataPeriodStart.toISOString().split('T')[0];
+        stepData.data_period_end = data.dataPeriodEnd.toISOString().split('T')[0];
+      }
 
       if (companyId) {
         const { error } = await supabase
@@ -139,7 +136,11 @@ export function MultiStepForm() {
         // Update status to COMPLETE only after file upload
         const { error: statusError } = await supabase
           .from('companies')
-          .update({ status: 'COMPLETE' })
+          .update({ 
+            status: 'COMPLETE',
+            data_period_start: data.dataPeriodStart.toISOString().split('T')[0],
+            data_period_end: data.dataPeriodEnd.toISOString().split('T')[0]
+          })
           .eq('id', companyId);
 
         if (statusError) throw statusError;
