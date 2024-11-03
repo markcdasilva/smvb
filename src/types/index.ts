@@ -7,4 +7,5 @@ export interface CompanyData {
   kreditorliste?: File;
   dataPeriodStart: Date;
   dataPeriodEnd: Date;
+  status?: 'INCOMPLETE' | 'COMPLETE';
 }

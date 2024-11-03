@@ -98,9 +98,9 @@ export function FileUpload({ onFileSelect, selectedFile }: FileUploadProps) {
           <div className="text-sm text-blue-700">
             <p className="font-medium">Vigtig information om kreditorlisten:</p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li>Listen skal indeholde alle jeres leverandører</li>
-              <li>Inkluder årlig omsætning per leverandør</li>
-              <li>Betalingsbetingelser skal være angivet</li>
+              <li>Listen skal indeholde så mange leverandører som muligt for at få det bedste grundlag for jeres benchmark</li>
+              <li>Listen skal indeholde følgende kolonner med én kreditor per række (Kreditors CVR nummer, kreditors selskabsnavn og årlige omkostninger til kreditor)</li>
+              <li>Vælg den korrekte startdato for dataperioden ovenfor</li>
               <li>Alle beløb skal være i DKK</li>
             </ul>
           </div>

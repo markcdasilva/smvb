@@ -2,16 +2,8 @@ import React, { useState } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { StepIndicator } from './StepIndicator';
 import { FileUpload } from './FileUpload';
-import type { CompanyData, FormStatus } from '../types';
+import type { CompanyData } from '../types';
 import { supabase } from '../lib/supabase-client';
-
-const getInitialDates = () => {
-  const start = new Date();
-  const end = new Date(start);
-  end.setFullYear(end.getFullYear() + 1);
-  end.setDate(end.getDate() - 1);
-  return { start, end };
-};
 
 const INITIAL_DATA: CompanyData = {
   companyName: '',
@@ -19,21 +11,22 @@ const INITIAL_DATA: CompanyData = {
   employees: 0,
   contactPerson: '',
   email: '',
-  dataPeriodStart: getInitialDates().start,
-  dataPeriodEnd: getInitialDates().end,
+  dataPeriodStart: new Date(),
+  dataPeriodEnd: new Date(),
+  status: 'INCOMPLETE'
 };
 
 export function MultiStepForm() {
   const [data, setData] = useState(INITIAL_DATA);
   const [currentStep, setCurrentStep] = useState(0);
-  const [status, setStatus] = useState<FormStatus>('idle');
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
   const updateFields = (fields: Partial<CompanyData>) => {
     setData(prev => {
       const newData = { ...prev, ...fields };
       
-      // If start date is updated, adjust end date
       if (fields.dataPeriodStart) {
         const endDate = new Date(fields.dataPeriodStart);
         endDate.setFullYear(endDate.getFullYear() + 1);
@@ -45,7 +38,48 @@ export function MultiStepForm() {
     });
   };
 
-  const next = () => {
+  const saveCurrentStep = async () => {
+    try {
+      const stepData = {
+        company_name: data.companyName,
+        cvr: data.cvr,
+        employees: data.employees,
+        contact_person: data.contactPerson,
+        email: data.email,
+        data_period_start: data.dataPeriodStart.toISOString().split('T')[0],
+        data_period_end: data.dataPeriodEnd.toISOString().split('T')[0],
+        ip_address: window.location.hostname,
+        user_agent: navigator.userAgent,
+        status: currentStep === 2 ? 'COMPLETE' : 'INCOMPLETE'
+      };
+
+      if (companyId) {
+        // Update existing record
+        const { error } = await supabase
+          .from('companies')
+          .update(stepData)
+          .eq('id', companyId);
+
+        if (error) throw error;
+      } else {
+        // Create new record
+        const { data: newCompany, error } = await supabase
+          .from('companies')
+          .insert([stepData])
+          .select()
+          .single();
+
+        if (error) throw error;
+        setCompanyId(newCompany.id);
+      }
+    } catch (err) {
+      console.error('Error saving step:', err);
+      // Continue anyway to not block the user
+    }
+  };
+
+  const next = async () => {
+    await saveCurrentStep();
     setCurrentStep(i => (i >= 2 ? i : i + 1));
   };
 
@@ -64,30 +98,12 @@ export function MultiStepForm() {
     setError(null);
 
     try {
-      // Insert company data
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert([{
-          company_name: data.companyName,
-          cvr: data.cvr,
-          employees: data.employees,
-          contact_person: data.contactPerson,
-          email: data.email,
-          data_period_start: data.dataPeriodStart.toISOString().split('T')[0],
-          data_period_end: data.dataPeriodEnd.toISOString().split('T')[0],
-          ip_address: window.location.hostname,
-          user_agent: navigator.userAgent,
-          status: 'PENDING'
-        }])
-        .select()
-        .single();
+      await saveCurrentStep();
 
-      if (companyError) throw companyError;
-
-      // If there's a file, upload it
-      if (data.kreditorliste && company) {
+      // Handle file upload if present
+      if (data.kreditorliste && companyId) {
         const fileExt = data.kreditorliste.name.split('.').pop();
-        const filePath = `${company.id}/${Date.now()}.${fileExt}`;
+        const filePath = `${companyId}/${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('kreditorlister')
@@ -95,11 +111,10 @@ export function MultiStepForm() {
 
         if (uploadError) throw uploadError;
 
-        // Create file upload record
         const { error: fileRecordError } = await supabase
           .from('file_uploads')
           .insert([{
-            company_id: company.id,
+            company_id: companyId,
             file_name: data.kreditorliste.name,
             file_size: data.kreditorliste.size,
             mime_type: data.kreditorliste.type,
@@ -107,12 +122,20 @@ export function MultiStepForm() {
           }]);
 
         if (fileRecordError) throw fileRecordError;
+
+        // Update company status to complete
+        const { error: statusError } = await supabase
+          .from('companies')
+          .update({ status: 'COMPLETE' })
+          .eq('id', companyId);
+
+        if (statusError) throw statusError;
       }
 
       setStatus('success');
-      // Reset form
       setData(INITIAL_DATA);
       setCurrentStep(0);
+      setCompanyId(null);
     } catch (err: any) {
       console.error('Submission error:', err);
       setError(err.message || 'Der opstod en fejl. Prøv venligst igen.');
@@ -161,7 +184,7 @@ export function MultiStepForm() {
                 </div>
                 <div>
                   <label htmlFor="cvr" className="block text-sm font-medium text-gray-700">
-                    CVR Nummer
+                    CVR nummer
                   </label>
                   <input
                     type="text"
@@ -232,13 +255,13 @@ export function MultiStepForm() {
 
           {currentStep === 2 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">Upload Kreditorliste</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Upload kreditorliste med årlige omkostninger</h2>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="dataPeriodStart" className="block text-sm font-medium text-gray-700">
-                      Regnskabsperiode start
+                      Dataperiode start
                     </label>
                     <input
                       type="date"
@@ -251,7 +274,7 @@ export function MultiStepForm() {
                   </div>
                   <div>
                     <label htmlFor="dataPeriodEnd" className="block text-sm font-medium text-gray-700">
-                      Regnskabsperiode slut
+                      Dataperiode slut
                     </label>
                     <input
                       type="date"
