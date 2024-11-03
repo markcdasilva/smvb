@@ -3,54 +3,42 @@ import CryptoJS from 'crypto-js';
 const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
 
 if (!SECRET_KEY) {
-  console.error('VITE_ENCRYPTION_KEY is not set in environment variables');
+  throw new Error('VITE_ENCRYPTION_KEY is not set in environment variables');
 }
 
 export function encrypt(text: string): string {
+  if (!text) return '';
+  
   try {
-    if (!SECRET_KEY) {
-      throw new Error('Encryption key is not set');
-    }
-    return CryptoJS.AES.encrypt(text, SECRET_KEY).toString();
+    const encrypted = CryptoJS.AES.encrypt(text, SECRET_KEY);
+    return encrypted.toString();
   } catch (error) {
     console.error('Encryption error:', error);
-    return text; // Return original text if encryption fails
+    throw new Error('Failed to encrypt data');
   }
 }
 
 export function decrypt(ciphertext: string): string {
+  if (!ciphertext) return '';
+  
   try {
-    if (!SECRET_KEY) {
-      throw new Error('Encryption key is not set');
+    // Check if the ciphertext is in the correct format
+    if (!ciphertext.includes('U2FsdGVk')) {
+      return ciphertext; // Return as-is if not encrypted
     }
-    if (!ciphertext) {
-      return '';
-    }
+
     const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
-    return bytes.toString(CryptoJS.enc.Utf8);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    
+    // Validate decrypted result
+    if (!decrypted && ciphertext) {
+      console.error('Decryption produced empty result for:', ciphertext);
+      return 'Decryption Error';
+    }
+    
+    return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
-    console.error('Failed to decrypt:', ciphertext);
-    return ciphertext; // Return original text if decryption fails
+    return 'Decryption Error';
   }
-}
-
-// Encrypt specific fields of an object
-export function encryptFields<T extends Record<string, any>>(
-  data: T,
-  fieldsToEncrypt: (keyof T)[]
-): T {
-  const encryptedData = { ...data };
-  
-  for (const field of fieldsToEncrypt) {
-    if (typeof data[field] === 'string') {
-      try {
-        encryptedData[field] = encrypt(data[field] as string) as any;
-      } catch (error) {
-        console.error(`Failed to encrypt field ${String(field)}:`, error);
-      }
-    }
-  }
-  
-  return encryptedData;
 }

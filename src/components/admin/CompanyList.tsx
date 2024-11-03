@@ -37,21 +37,32 @@ export function CompanyList() {
 
   const decryptCompany = (company: any): Company => {
     try {
-      return {
+      const decrypted = {
         ...company,
-        company_name: decrypt(company.company_name) || 'Decryption Error',
-        cvr: decrypt(company.cvr) || 'Decryption Error',
-        contact_person: decrypt(company.contact_person) || 'Decryption Error',
-        email: decrypt(company.email) || 'Decryption Error'
+        company_name: decrypt(company.company_name),
+        cvr: decrypt(company.cvr),
+        contact_person: decrypt(company.contact_person),
+        email: decrypt(company.email)
       };
+
+      // Validate decrypted data
+      if (decrypted.company_name === 'Decryption Error' ||
+          decrypted.cvr === 'Decryption Error' ||
+          decrypted.contact_person === 'Decryption Error' ||
+          decrypted.email === 'Decryption Error') {
+        throw new Error('Decryption failed for one or more fields');
+      }
+
+      return decrypted;
     } catch (error) {
       console.error('Decryption error for company:', company.id, error);
+      // Return original values if decryption fails
       return {
         ...company,
-        company_name: 'Decryption Error',
-        cvr: 'Decryption Error',
-        contact_person: 'Decryption Error',
-        email: 'Decryption Error'
+        company_name: company.company_name,
+        cvr: company.cvr,
+        contact_person: company.contact_person,
+        email: company.email
       };
     }
   };
