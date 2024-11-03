@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { StepIndicator } from './StepIndicator';
 import { FileUpload } from './FileUpload';
@@ -23,17 +23,6 @@ export function MultiStepForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const saveTimeout = setTimeout(async () => {
-      if (data.companyName || data.cvr || data.employees || data.contactPerson || data.email) {
-        await saveCurrentStep();
-      }
-    }, 1000);
-
-    return () => clearTimeout(saveTimeout);
-  }, [data]);
 
   const updateFields = (fields: Partial<CompanyData>) => {
     setData(prev => {
@@ -50,12 +39,8 @@ export function MultiStepForm() {
     });
   };
 
-  const saveCurrentStep = async () => {
-    if (saving) return;
-    
+  const saveToSupabase = async () => {
     try {
-      setSaving(true);
-      
       const stepData = {
         company_name: encrypt(data.companyName),
         cvr: encrypt(data.cvr),
@@ -66,7 +51,7 @@ export function MultiStepForm() {
         data_period_end: data.dataPeriodEnd.toISOString().split('T')[0],
         ip_address: window.location.hostname,
         user_agent: navigator.userAgent,
-        status: currentStep === 2 && data.kreditorliste ? 'COMPLETE' : 'INCOMPLETE'
+        status: 'INCOMPLETE'
       };
 
       if (companyId) {
@@ -87,15 +72,21 @@ export function MultiStepForm() {
         setCompanyId(newCompany.id);
       }
     } catch (err) {
-      console.error('Error saving step:', err);
-    } finally {
-      setSaving(false);
+      console.error('Error saving to Supabase:', err);
+      throw err;
     }
   };
 
   const next = async () => {
-    await saveCurrentStep();
-    setCurrentStep(i => (i >= 2 ? i : i + 1));
+    try {
+      setStatus('submitting');
+      await saveToSupabase();
+      setCurrentStep(i => (i >= 2 ? i : i + 1));
+      setStatus('idle');
+    } catch (err: any) {
+      setError(err.message || 'Der opstod en fejl. Prøv venligst igen.');
+      setStatus('error');
+    }
   };
 
   const back = () => {
@@ -105,7 +96,7 @@ export function MultiStepForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (currentStep < 2) {
-      next();
+      await next();
       return;
     }
 
@@ -113,8 +104,6 @@ export function MultiStepForm() {
     setError(null);
 
     try {
-      await saveCurrentStep();
-
       if (data.kreditorliste && companyId) {
         const fileExt = data.kreditorliste.name.split('.').pop();
         const filePath = `${companyId}/${Date.now()}.${fileExt}`;
@@ -137,6 +126,7 @@ export function MultiStepForm() {
 
         if (fileRecordError) throw fileRecordError;
 
+        // Update status to COMPLETE only after file upload
         const { error: statusError } = await supabase
           .from('companies')
           .update({ status: 'COMPLETE' })
@@ -279,7 +269,6 @@ export function MultiStepForm() {
                     <input
                       type="date"
                       id="dataPeriodStart"
-                      value={data.dataPeriodStart.toISOString().split('T')[0]}
                       onChange={e => updateFields({ dataPeriodStart: new Date(e.target.value) })}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       required

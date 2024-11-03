@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/auth';
-import { Download, Pencil, Eye, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { Download, Pencil, Eye, Search, ChevronUp, ChevronDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { decrypt } from '../../lib/encryption';
 import { ViewEditModal } from './ViewEditModal';
 
@@ -14,6 +14,7 @@ interface Company {
   email: string;
   data_period_start: string;
   data_period_end: string;
+  status: 'INCOMPLETE' | 'COMPLETE';
   file_uploads?: {
     id: string;
     file_name: string;
@@ -21,7 +22,7 @@ interface Company {
   } | null;
 }
 
-type SortField = 'index' | 'created_at' | 'company_name' | 'cvr' | 'employees' | 'contact_person' | 'email' | 'data_period_start';
+type SortField = 'index' | 'created_at' | 'company_name' | 'cvr' | 'employees' | 'contact_person' | 'email' | 'data_period_start' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 export function CompanyList() {
@@ -32,38 +33,21 @@ export function CompanyList() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [sortField, setSortField] = useState<SortField>('index');
+  const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const decryptCompany = (company: any): Company => {
     try {
-      const decrypted = {
+      return {
         ...company,
         company_name: decrypt(company.company_name),
         cvr: decrypt(company.cvr),
         contact_person: decrypt(company.contact_person),
         email: decrypt(company.email)
       };
-
-      // Validate decrypted data
-      if (decrypted.company_name === 'Decryption Error' ||
-          decrypted.cvr === 'Decryption Error' ||
-          decrypted.contact_person === 'Decryption Error' ||
-          decrypted.email === 'Decryption Error') {
-        throw new Error('Decryption failed for one or more fields');
-      }
-
-      return decrypted;
     } catch (error) {
       console.error('Decryption error for company:', company.id, error);
-      // Return original values if decryption fails
-      return {
-        ...company,
-        company_name: company.company_name,
-        cvr: company.cvr,
-        contact_person: company.contact_person,
-        email: company.email
-      };
+      return company;
     }
   };
 
@@ -99,7 +83,7 @@ export function CompanyList() {
 
       const decryptedData = data.map((company, index) => ({
         ...decryptCompany(company),
-        index: data.length - index
+        index: index + 1
       }));
 
       setCompanies(decryptedData);
@@ -178,13 +162,6 @@ export function CompanyList() {
     }
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return null;
-    return sortDirection === 'asc' ? 
-      <ChevronUp className="w-4 h-4 inline-block ml-1" /> : 
-      <ChevronDown className="w-4 h-4 inline-block ml-1" />;
-  };
-
   const handleView = (company: Company) => {
     setSelectedCompany(company);
     setIsEditing(false);
@@ -195,6 +172,27 @@ export function CompanyList() {
     setSelectedCompany(company);
     setIsEditing(true);
     setIsModalOpen(true);
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4 inline-block ml-1" /> : 
+      <ChevronDown className="w-4 h-4 inline-block ml-1" />;
+  };
+
+  const getStatusIcon = (status: string) => {
+    if (status === 'COMPLETE') {
+      return <CheckCircle className="w-5 h-5 text-green-500" />;
+    }
+    return <AlertCircle className="w-5 h-5 text-amber-500" />;
+  };
+
+  const getStatusText = (status: string) => {
+    if (status === 'COMPLETE') {
+      return 'Komplet';
+    }
+    return 'Ufuldstændig';
   };
 
   const filteredCompanies = companies
@@ -256,6 +254,13 @@ export function CompanyList() {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('status')}
+                >
+                  Status<SortIcon field="status" />
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('created_at')}
                 >
                   Dato<SortIcon field="created_at" />
@@ -296,13 +301,13 @@ export function CompanyList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
                     Indlæser...
                   </td>
                 </tr>
               ) : filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
                     Ingen virksomheder fundet
                   </td>
                 </tr>
@@ -311,6 +316,14 @@ export function CompanyList() {
                   <tr key={company.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       #{company.index}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(company.status)}
+                        <span className="text-sm text-gray-900">
+                          {getStatusText(company.status)}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(company.created_at).toLocaleDateString('da-DK', {
