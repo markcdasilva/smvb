@@ -35,6 +35,27 @@ export function CompanyList() {
   const [sortField, setSortField] = useState<SortField>('index');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
+  const decryptCompany = (company: any): Company => {
+    try {
+      return {
+        ...company,
+        company_name: decrypt(company.company_name) || 'Decryption Error',
+        cvr: decrypt(company.cvr) || 'Decryption Error',
+        contact_person: decrypt(company.contact_person) || 'Decryption Error',
+        email: decrypt(company.email) || 'Decryption Error'
+      };
+    } catch (error) {
+      console.error('Decryption error for company:', company.id, error);
+      return {
+        ...company,
+        company_name: 'Decryption Error',
+        cvr: 'Decryption Error',
+        contact_person: 'Decryption Error',
+        email: 'Decryption Error'
+      };
+    }
+  };
+
   const fetchCompanies = async () => {
     try {
       setLoading(true);
@@ -65,25 +86,10 @@ export function CompanyList() {
         return;
       }
 
-      console.log('Raw company data:', data); // Debug log
-
-      const decryptedData = data.map((company, index) => {
-        try {
-          const decrypted = {
-            ...company,
-            index: data.length - index,
-            company_name: decrypt(company.company_name),
-            cvr: decrypt(company.cvr),
-            contact_person: decrypt(company.contact_person),
-            email: decrypt(company.email)
-          };
-          console.log('Decrypted company:', decrypted); // Debug log
-          return decrypted;
-        } catch (error) {
-          console.error('Failed to decrypt company data:', error);
-          return company;
-        }
-      });
+      const decryptedData = data.map((company, index) => ({
+        ...decryptCompany(company),
+        index: data.length - index
+      }));
 
       setCompanies(decryptedData);
     } catch (err: any) {
