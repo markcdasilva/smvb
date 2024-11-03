@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { StepIndicator } from './StepIndicator';
 import { FileUpload } from './FileUpload';
 import type { CompanyData } from '../types';
 import { supabase } from '../lib/supabase-client';
+import { encrypt } from '../lib/encryption';
 
 const INITIAL_DATA: CompanyData = {
   companyName: '',
@@ -22,6 +23,17 @@ export function MultiStepForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const saveTimeout = setTimeout(async () => {
+      if (data.companyName || data.cvr || data.employees || data.contactPerson || data.email) {
+        await saveCurrentStep();
+      }
+    }, 1000);
+
+    return () => clearTimeout(saveTimeout);
+  }, [data]);
 
   const updateFields = (fields: Partial<CompanyData>) => {
     setData(prev => {
@@ -39,22 +51,25 @@ export function MultiStepForm() {
   };
 
   const saveCurrentStep = async () => {
+    if (saving) return;
+    
     try {
+      setSaving(true);
+      
       const stepData = {
-        company_name: data.companyName,
-        cvr: data.cvr,
+        company_name: encrypt(data.companyName),
+        cvr: encrypt(data.cvr),
         employees: data.employees,
-        contact_person: data.contactPerson,
-        email: data.email,
+        contact_person: encrypt(data.contactPerson),
+        email: encrypt(data.email),
         data_period_start: data.dataPeriodStart.toISOString().split('T')[0],
         data_period_end: data.dataPeriodEnd.toISOString().split('T')[0],
         ip_address: window.location.hostname,
         user_agent: navigator.userAgent,
-        status: currentStep === 2 ? 'COMPLETE' : 'INCOMPLETE'
+        status: currentStep === 2 && data.kreditorliste ? 'COMPLETE' : 'INCOMPLETE'
       };
 
       if (companyId) {
-        // Update existing record
         const { error } = await supabase
           .from('companies')
           .update(stepData)
@@ -62,7 +77,6 @@ export function MultiStepForm() {
 
         if (error) throw error;
       } else {
-        // Create new record
         const { data: newCompany, error } = await supabase
           .from('companies')
           .insert([stepData])
@@ -74,7 +88,8 @@ export function MultiStepForm() {
       }
     } catch (err) {
       console.error('Error saving step:', err);
-      // Continue anyway to not block the user
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -100,7 +115,6 @@ export function MultiStepForm() {
     try {
       await saveCurrentStep();
 
-      // Handle file upload if present
       if (data.kreditorliste && companyId) {
         const fileExt = data.kreditorliste.name.split('.').pop();
         const filePath = `${companyId}/${Date.now()}.${fileExt}`;
@@ -123,7 +137,6 @@ export function MultiStepForm() {
 
         if (fileRecordError) throw fileRecordError;
 
-        // Update company status to complete
         const { error: statusError } = await supabase
           .from('companies')
           .update({ status: 'COMPLETE' })
