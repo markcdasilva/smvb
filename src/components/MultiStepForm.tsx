@@ -12,8 +12,8 @@ const INITIAL_DATA: CompanyData = {
   employees: 0,
   contactPerson: '',
   email: '',
-  dataPeriodStart: new Date(''),  // Initialize as invalid date
-  dataPeriodEnd: new Date(''),    // Initialize as invalid date
+  dataPeriodStart: null,
+  dataPeriodEnd: null,
   status: 'INCOMPLETE'
 };
 
@@ -31,10 +31,12 @@ export function MultiStepForm() {
       // If start date is updated, adjust end date
       if (fields.dataPeriodStart) {
         const startDate = new Date(fields.dataPeriodStart);
-        const endDate = new Date(startDate);
-        endDate.setFullYear(endDate.getFullYear() + 1);
-        endDate.setDate(endDate.getDate() - 1);
-        newData.dataPeriodEnd = endDate;
+        if (!isNaN(startDate.getTime())) {
+          const endDate = new Date(startDate);
+          endDate.setFullYear(endDate.getFullYear() + 1);
+          endDate.setDate(endDate.getDate() - 1);
+          newData.dataPeriodEnd = endDate;
+        }
       }
       
       return newData;
@@ -56,9 +58,14 @@ export function MultiStepForm() {
       };
 
       // Only add dates if we're on step 3 and dates are valid
-      if (currentStep === 2 && data.dataPeriodStart && !isNaN(data.dataPeriodStart.getTime())) {
-        stepData.data_period_start = data.dataPeriodStart.toISOString().split('T')[0];
-        stepData.data_period_end = data.dataPeriodEnd.toISOString().split('T')[0];
+      if (currentStep === 2 && data.dataPeriodStart) {
+        const startDate = new Date(data.dataPeriodStart);
+        const endDate = data.dataPeriodEnd ? new Date(data.dataPeriodEnd) : null;
+        
+        if (!isNaN(startDate.getTime()) && endDate && !isNaN(endDate.getTime())) {
+          stepData.data_period_start = startDate.toISOString().split('T')[0];
+          stepData.data_period_end = endDate.toISOString().split('T')[0];
+        }
       }
 
       if (companyId) {
@@ -138,8 +145,8 @@ export function MultiStepForm() {
           .from('companies')
           .update({ 
             status: 'COMPLETE',
-            data_period_start: data.dataPeriodStart.toISOString().split('T')[0],
-            data_period_end: data.dataPeriodEnd.toISOString().split('T')[0]
+            data_period_start: data.dataPeriodStart ? new Date(data.dataPeriodStart).toISOString().split('T')[0] : null,
+            data_period_end: data.dataPeriodEnd ? new Date(data.dataPeriodEnd).toISOString().split('T')[0] : null
           })
           .eq('id', companyId);
 
@@ -280,7 +287,7 @@ export function MultiStepForm() {
                     <input
                       type="date"
                       id="dataPeriodStart"
-                      onChange={e => updateFields({ dataPeriodStart: new Date(e.target.value) })}
+                      onChange={e => updateFields({ dataPeriodStart: e.target.value })}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       required
                     />
@@ -292,7 +299,7 @@ export function MultiStepForm() {
                     <input
                       type="date"
                       id="dataPeriodEnd"
-                      value={data.dataPeriodEnd.toISOString().split('T')[0]}
+                      value={data.dataPeriodEnd ? new Date(data.dataPeriodEnd).toISOString().split('T')[0] : ''}
                       className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 cursor-not-allowed"
                       disabled
                     />

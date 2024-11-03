@@ -5,7 +5,7 @@ export interface CompanyData {
   contactPerson: string;
   email: string;
   kreditorliste?: File;
-  dataPeriodStart: Date;
-  dataPeriodEnd: Date;
+  dataPeriodStart: string | null;
+  dataPeriodEnd: string | null;
   status?: 'INCOMPLETE' | 'COMPLETE';
 }
