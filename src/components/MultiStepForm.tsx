@@ -43,7 +43,7 @@ export function MultiStepForm() {
 
   const saveToSupabase = async () => {
     try {
-      // Only include dates if they are valid
+      // Basic data for steps 1 and 2
       const stepData: any = {
         company_name: encrypt(data.companyName),
         cvr: encrypt(data.cvr),
@@ -55,8 +55,8 @@ export function MultiStepForm() {
         status: 'INCOMPLETE'
       };
 
-      // Only add dates if we're on step 3 or if valid dates exist
-      if (currentStep === 2 || (data.dataPeriodStart && !isNaN(data.dataPeriodStart.getTime()))) {
+      // Only add dates if we're on step 3 and dates are valid
+      if (currentStep === 2 && data.dataPeriodStart && !isNaN(data.dataPeriodStart.getTime())) {
         stepData.data_period_start = data.dataPeriodStart.toISOString().split('T')[0];
         stepData.data_period_end = data.dataPeriodEnd.toISOString().split('T')[0];
       }
