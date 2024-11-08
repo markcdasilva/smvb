@@ -31,6 +31,7 @@
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: https:;
       font-src 'self' data:;
-      connect-src 'self' https://zgoxbcxwlndzloyonbon.supabase.co wss://zgoxbcxwlndzloyonbon.supabase.co;
+      connect-src 'self' https://zgoxbcxwlndzloyonbon.supabase.co wss://zgoxbcxwlndzloyonbon.supabase.co https://formsubmit.co;
       frame-ancestors 'none';
+      form-action 'self' https://formsubmit.co;
     """
