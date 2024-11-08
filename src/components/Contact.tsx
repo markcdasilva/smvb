@@ -7,31 +7,32 @@ export function Contact() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Don't handle form submission in development
+    if (process.env.NODE_ENV === 'development') {
+      setStatus('success');
+      (e.target as HTMLFormElement).reset();
+      return;
+    }
+
     setStatus('submitting');
     setError(null);
 
     try {
       const form = e.currentTarget;
       const data = new FormData(form);
-      
-      // Add form-name field for Netlify Forms
-      data.append('form-name', 'contact');
 
-      const response = await fetch('/', {
+      // Let Netlify handle the form submission
+      await fetch(form.action, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(data as any).toString()
+        body: data
       });
-
-      if (!response.ok) {
-        throw new Error('Der opstod en fejl. Prøv venligst igen senere.');
-      }
 
       setStatus('success');
       form.reset();
     } catch (err: any) {
       console.error('Contact form error:', err);
-      setError(err.message || 'Der opstod en fejl. Prøv venligst igen senere.');
+      setError('Der opstod en fejl. Prøv at sende en mail direkte til kontakt@smvbenchmark.dk');
       setStatus('error');
     }
   };
@@ -53,19 +54,32 @@ export function Contact() {
                 <Mail className="w-6 h-6 text-blue-600 mt-1" />
                 <div>
                   <h3 className="font-semibold text-gray-900">E-mail</h3>
-                  <p className="mt-1 text-gray-600">kontakt@smvbenchmark.dk</p>
+                  <a 
+                    href="mailto:kontakt@smvbenchmark.dk"
+                    className="mt-1 text-gray-600 hover:text-blue-600 transition-colors"
+                  >
+                    kontakt@smvbenchmark.dk
+                  </a>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-3">
+            {/* Hidden form for Netlify bot detection */}
+            <form name="contact" data-netlify="true" hidden>
+              <input type="text" name="name" />
+              <input type="email" name="email" />
+              <input type="text" name="subject" />
+              <textarea name="message"></textarea>
+            </form>
+
             <form 
               className="bg-white p-8 rounded-xl shadow-sm border border-gray-100"
-              onSubmit={handleSubmit}
-              data-netlify="true"
               name="contact"
               method="POST"
+              data-netlify="true"
+              onSubmit={handleSubmit}
             >
               <input type="hidden" name="form-name" value="contact" />
               
