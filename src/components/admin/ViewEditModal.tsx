@@ -53,14 +53,12 @@ export function ViewEditModal({ isOpen, onClose, company, isEditing, onSave, onD
     if (!company.file_uploads) return;
     
     try {
-      // Delete file from storage
       const { error: storageError } = await supabase.storage
         .from('kreditorlister')
         .remove([company.file_uploads.file_path]);
 
       if (storageError) throw storageError;
 
-      // Delete file record from database
       const { error: dbError } = await supabase
         .from('file_uploads')
         .delete()
@@ -78,6 +76,38 @@ export function ViewEditModal({ isOpen, onClose, company, isEditing, onSave, onD
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Er du sikker på, at du vil slette denne virksomhed? Dette kan ikke fortrydes.')) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      if (company.file_uploads) {
+        await supabase.storage
+          .from('kreditorlister')
+          .remove([company.file_uploads.file_path]);
+      }
+
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', company.id);
+
+      if (error) throw error;
+
+      onSave();
+      onClose();
+    } catch (err: any) {
+      console.error('Error deleting company:', err);
+      setError('Kunne ikke slette virksomheden. Prøv igen senere.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEditing) return;
@@ -86,7 +116,6 @@ export function ViewEditModal({ isOpen, onClose, company, isEditing, onSave, onD
       setSaving(true);
       setError(null);
 
-      // Update company data
       const { error: updateError } = await supabase
         .from('companies')
         .update({
@@ -102,19 +131,16 @@ export function ViewEditModal({ isOpen, onClose, company, isEditing, onSave, onD
 
       if (updateError) throw updateError;
 
-      // Handle file upload if there's a new file
       if (newFile) {
         const fileExt = newFile.name.split('.').pop();
         const filePath = `${company.id}/${Date.now()}.${fileExt}`;
 
-        // Upload new file
         const { error: uploadError } = await supabase.storage
           .from('kreditorlister')
           .upload(filePath, newFile);
 
         if (uploadError) throw uploadError;
 
-        // Update or create file record
         const fileData = {
           company_id: company.id,
           file_name: newFile.name,
@@ -124,7 +150,6 @@ export function ViewEditModal({ isOpen, onClose, company, isEditing, onSave, onD
         };
 
         if (company.file_uploads) {
-          // Update existing record
           const { error: fileUpdateError } = await supabase
             .from('file_uploads')
             .update(fileData)
@@ -132,12 +157,10 @@ export function ViewEditModal({ isOpen, onClose, company, isEditing, onSave, onD
 
           if (fileUpdateError) throw fileUpdateError;
 
-          // Delete old file from storage
           await supabase.storage
             .from('kreditorlister')
             .remove([company.file_uploads.file_path]);
         } else {
-          // Create new record
           const { error: fileInsertError } = await supabase
             .from('file_uploads')
             .insert([fileData]);
@@ -329,25 +352,38 @@ export function ViewEditModal({ isOpen, onClose, company, isEditing, onSave, onD
               )}
             </div>
 
-            {isEditing && (
-              <div className="flex justify-end space-x-4">
+            <div className="flex justify-between space-x-4 mt-6">
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center"
+                disabled={saving}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Slet virksomhed
+              </button>
+              
+              <div className="flex space-x-4">
                 <button
                   type="button"
                   onClick={onClose}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                   disabled={saving}
                 >
-                  Annuller
+                  {isEditing ? 'Annuller' : 'Luk'}
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                  disabled={saving}
-                >
-                  {saving ? 'Gemmer...' : 'Gem ændringer'}
-                </button>
+                
+                {isEditing && (
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    disabled={saving}
+                  >
+                     {saving ? 'Gemmer...' : 'Gem ændringer'}
+                  </button>
+                )}
               </div>
-            )}
+            </div>
           </form>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/auth';
-import { Download, Pencil, Eye, Search, ChevronUp, ChevronDown, AlertCircle, CheckCircle } from 'lucide-react';
+import { Download, Pencil, Eye, Search, ChevronUp, ChevronDown, AlertCircle, CheckCircle, Trash2 } from 'lucide-react';
 import { decrypt } from '../../lib/encryption';
 import { ViewEditModal } from './ViewEditModal';
 
@@ -20,6 +20,7 @@ interface Company {
     file_name: string;
     file_path: string;
   } | null;
+  index: number;
 }
 
 type SortField = 'index' | 'created_at' | 'company_name' | 'cvr' | 'employees' | 'contact_person' | 'email' | 'data_period_start' | 'status';
@@ -72,7 +73,7 @@ export function CompanyList() {
             file_path
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (fetchError) throw fetchError;
 
@@ -95,49 +96,30 @@ export function CompanyList() {
     }
   };
 
-  useEffect(() => {
-    fetchCompanies();
-
-    const subscription = supabase
-      .channel('companies_channel')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'companies' 
-      }, () => {
-        fetchCompanies();
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
+  const handleDelete = async (companyId: string, fileUploads?: { file_path: string } | null) => {
+    if (!confirm('Er du sikker på, at du vil slette denne virksomhed? Dette kan ikke fortrydes.')) {
+      return;
     }
-  };
 
-  const sortCompanies = (a: any, b: any) => {
-    const direction = sortDirection === 'asc' ? 1 : -1;
-    
-    if (sortField === 'index') {
-      return (a.index - b.index) * direction;
-    }
-    
-    const aValue = a[sortField];
-    const bValue = b[sortField];
+    try {
+      if (fileUploads) {
+        await supabase.storage
+          .from('kreditorlister')
+          .remove([fileUploads.file_path]);
+      }
 
-    if (typeof aValue === 'string') {
-      return aValue.localeCompare(bValue) * direction;
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyId);
+
+      if (error) throw error;
+
+      await fetchCompanies();
+    } catch (err: any) {
+      console.error('Error deleting company:', err);
+      setError('Kunne ikke slette virksomheden. Prøv igen senere.');
     }
-    
-    return (aValue - bValue) * direction;
   };
 
   const handleDownload = async (filePath: string, fileName: string) => {
@@ -173,6 +155,51 @@ export function CompanyList() {
     setIsEditing(true);
     setIsModalOpen(true);
   };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortCompanies = (a: Company, b: Company) => {
+    const direction = sortDirection === 'asc' ? 1 : -1;
+    
+    if (sortField === 'index') {
+      return (a.index - b.index) * direction;
+    }
+    
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+
+    if (typeof aValue === 'string') {
+      return aValue.localeCompare(bValue) * direction;
+    }
+    
+    return (aValue - bValue) * direction;
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+
+    const subscription = supabase
+      .channel('companies_channel')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'companies' 
+      }, () => {
+        fetchCompanies();
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return null;
@@ -372,6 +399,13 @@ export function CompanyList() {
                           title="Rediger"
                         >
                           <Pencil className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(company.id, company.file_uploads)}
+                          className="text-red-600 hover:text-red-900 transition-colors"
+                          title="Slet"
+                        >
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
