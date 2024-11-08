@@ -8,13 +8,6 @@ export function Contact() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Don't handle form submission in development
-    if (process.env.NODE_ENV === 'development') {
-      setStatus('success');
-      (e.target as HTMLFormElement).reset();
-      return;
-    }
-
     setStatus('submitting');
     setError(null);
 
@@ -22,11 +15,15 @@ export function Contact() {
       const form = e.currentTarget;
       const data = new FormData(form);
 
-      // Let Netlify handle the form submission
-      await fetch(form.action, {
+      const response = await fetch('https://formsubmit.co/ajax/kontakt@smvbenchmark.dk', {
         method: 'POST',
+        headers: {
+          'Accept': 'application/json'
+        },
         body: data
       });
+
+      if (!response.ok) throw new Error('Network response was not ok');
 
       setStatus('success');
       form.reset();
@@ -66,22 +63,16 @@ export function Contact() {
           </div>
 
           <div className="lg:col-span-3">
-            {/* Hidden form for Netlify bot detection */}
-            <form name="contact" data-netlify="true" hidden>
-              <input type="text" name="name" />
-              <input type="email" name="email" />
-              <input type="text" name="subject" />
-              <textarea name="message"></textarea>
-            </form>
-
             <form 
               className="bg-white p-8 rounded-xl shadow-sm border border-gray-100"
-              name="contact"
+              action="https://formsubmit.co/kontakt@smvbenchmark.dk"
               method="POST"
-              data-netlify="true"
               onSubmit={handleSubmit}
             >
-              <input type="hidden" name="form-name" value="contact" />
+              <input type="hidden" name="_subject" value="Ny besked fra SMV Benchmark" />
+              <input type="hidden" name="_captcha" value="false" />
+              <input type="hidden" name="_template" value="table" />
+              <input type="hidden" name="_next" value={window.location.href} />
               
               {status === 'success' ? (
                 <div className="text-center py-8">
