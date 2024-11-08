@@ -13,7 +13,7 @@ export function Hero({ onGetStarted }: HeroProps) {
           Er dine udgifter højere end konkurrenternes?
         </h1>
         <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-          Få gratis indsigt i hvordan dine omkostninger ligger i forhold til andre virksomheder i din branche, og find ud af hvor du kan spare penge.
+          Få gratis indsigt i hvordan dine omkostninger ligger i forhold til andre virksomheder i din branche, så du ikke betaler for meget.
         </p>
         <button
           onClick={onGetStarted}

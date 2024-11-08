@@ -17,32 +17,33 @@ export function About() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <p className="text-lg text-gray-600 leading-relaxed">
-              Mit navn er Mark D.S., og jeg er CFO i en dansk fremstillingsvirksomhed. 
-              Efter års erfaring med leverandørforhandlinger opdagede jeg, at mange 
-              virksomheder betaler forskellige priser for samme ydelser.
+              Mit navn er Mark Hvidberg, og jeg er CFO i en mellemstor dansk fremstillingsvirksomhed. 
+              Efter mange års erfaring med leverandørforhandlinger har jeg set, at mange virksomheder 
+              betaler vidt forskellige priser for samme ydelser – og de fleste små og mellemstore 
+              virksomheder får ofte lov til at betale mest.
             </p>
             <p className="text-lg text-gray-600 leading-relaxed">
-              Derfor skabte jeg SMV Benchmark - et gratis værktøj, der hjælper små 
-              og mellemstore virksomheder med at optimere deres omkostninger gennem 
-              anonymiseret sammenligning med andre virksomheder i branchen.
+              Derfor har jeg skabt SMV Benchmark – et gratis værktøj, der hjælper små og mellemstore 
+              virksomheder med at optimere deres omkostninger gennem anonymiseret sammenligning med 
+              andre virksomheder.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <Users className="h-8 w-8 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">+500 Virksomheder</h3>
-              <p className="text-gray-600">Deltager aktivt i vores benchmark-program</p>
+              <h3 className="text-xl font-semibold mb-2">+500 Virksomhed</h3>
+              <p className="text-gray-600">Forventes at deltage i benchmark-programmet</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <BarChart2 className="h-8 w-8 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">15+ Brancher</h3>
-              <p className="text-gray-600">Dækket af vores omfattende database</p>
+              <h3 className="text-xl font-semibold mb-2">+100 Leverandører</h3>
+              <p className="text-gray-600">Forventes at blive sammenlignet i programmet</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <TrendingUp className="h-8 w-8 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">12-18% Besparelse</h3>
-              <p className="text-gray-600">Gennemsnitlig omkostningsreduktion</p>
+              <h3 className="text-xl font-semibold mb-2">Op til 20% besparelse</h3>
+              <p className="text-gray-600">Gennemsnitlig forventet omkostningsreduktion</p>
             </div>
           </div>
         </div>

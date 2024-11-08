@@ -43,11 +43,15 @@ export function FAQ() {
     },
     {
       question: 'Er mine data sikre?',
-      answer: 'Absolut. Vi bruger militærgrad kryptering (AES-256) til at beskytte dine data, og alle oplysninger behandles fortroligt i overensstemmelse med GDPR. Din data bliver kun brugt i anonymiseret form til benchmarking, og du har altid fuld kontrol over dine oplysninger.'
+      answer: 'Absolut. SMV Benchmark bruger den højeste krypteringsstandard (AES-256) til at beskytte dine data, og alle oplysninger behandles fortroligt i overensstemmelse med GDPR. Din data bliver kun brugt i anonymiseret form til benchmarking, og du har altid fuld kontrol over dine oplysninger.'
     },
     {
       question: 'Hvad koster det?',
-      answer: 'SMV Benchmark er 100% gratis at bruge. Vi tror på at hjælpe danske virksomheder med at blive mere konkurrencedygtige, og derfor tilbyder vi denne service uden beregning. Der er ingen skjulte gebyrer eller fremtidige omkostninger.'
+      answer: 'SMV Benchmark er 100% gratis at bruge. Det er startet for at hjælpe små og mellemstore danske virksomheder med at blive mere konkurrencedygtige. Der er ingen skjulte gebyrer eller fremtidige omkostninger.'
+    },
+    {
+      question: 'Hvornår får jeg min benchmark-rapport?',
+      answer: 'Du kan forvente at modtage din rapport i starten af 2025 – og senest tre måneder efter indsendelse.'
     }
   ];
 
