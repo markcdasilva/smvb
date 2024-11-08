@@ -1,7 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Mail } from 'lucide-react';
 
 export function Contact() {
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    // Check if we're returning from form submission
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('_success')) {
+      setShowSuccess(true);
+      // Remove the parameter from URL without refreshing
+      window.history.replaceState({}, '', window.location.pathname);
+      // Hide the message after 5 seconds
+      const timer = setTimeout(() => setShowSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   return (
     <section id="kontakt" className="py-24 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,6 +46,12 @@ export function Contact() {
           </div>
 
           <div className="lg:col-span-3">
+            {showSuccess && (
+              <div className="mb-6 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
+                Tak for din besked! Vi vender tilbage hurtigst muligt.
+              </div>
+            )}
+            
             <form 
               className="bg-white p-8 rounded-xl shadow-sm border border-gray-100"
               action="https://formsubmit.co/kontakt@smvbenchmark.dk"
@@ -40,7 +61,7 @@ export function Contact() {
               <input type="hidden" name="_subject" value="Ny besked fra SMV Benchmark" />
               <input type="hidden" name="_captcha" value="false" />
               <input type="hidden" name="_template" value="table" />
-              <input type="hidden" name="_next" value={window.location.href} />
+              <input type="hidden" name="_next" value={`${window.location.href}?_success=true`} />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
