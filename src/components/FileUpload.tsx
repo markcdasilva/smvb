@@ -55,7 +55,9 @@ export function FileUpload({ onFileSelect, selectedFile }: FileUploadProps) {
       <div
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors duration-200"
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
+          selectedFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-blue-500'
+        }`}
       >
         <input
           type="file"
@@ -63,6 +65,7 @@ export function FileUpload({ onFileSelect, selectedFile }: FileUploadProps) {
           onChange={handleFileSelect}
           accept=".csv,.xls,.xlsx"
           className="hidden"
+          required
         />
         <label
           htmlFor="kreditorliste"
@@ -81,11 +84,11 @@ export function FileUpload({ onFileSelect, selectedFile }: FileUploadProps) {
       </div>
 
       {selectedFile && (
-        <div className="flex items-center space-x-3 bg-blue-50 p-4 rounded-lg">
-          <CheckCircle2 className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center space-x-3 bg-green-50 p-4 rounded-lg">
+          <CheckCircle2 className="h-5 w-5 text-green-600" />
           <div>
-            <p className="text-sm font-medium text-blue-900">{selectedFile.name}</p>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm font-medium text-green-900">{selectedFile.name}</p>
+            <p className="text-sm text-green-700">
               {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
             </p>
           </div>

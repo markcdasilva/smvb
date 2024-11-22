@@ -37,7 +37,7 @@ export function MultiStepForm() {
           const endDate = new Date(startDate);
           endDate.setFullYear(endDate.getFullYear() + 1);
           endDate.setDate(endDate.getDate() - 1);
-          newData.dataPeriodEnd = endDate;
+          newData.dataPeriodEnd = endDate.toISOString().split('T')[0];
         }
       }
       
@@ -59,13 +59,8 @@ export function MultiStepForm() {
       };
 
       if (currentStep === 2 && data.dataPeriodStart) {
-        const startDate = new Date(data.dataPeriodStart);
-        const endDate = data.dataPeriodEnd ? new Date(data.dataPeriodEnd) : null;
-        
-        if (!isNaN(startDate.getTime()) && endDate && !isNaN(endDate.getTime())) {
-          stepData.data_period_start = startDate.toISOString().split('T')[0];
-          stepData.data_period_end = endDate.toISOString().split('T')[0];
-        }
+        stepData.data_period_start = data.dataPeriodStart;
+        stepData.data_period_end = data.dataPeriodEnd;
       }
 
       if (companyId) {
@@ -123,8 +118,21 @@ export function MultiStepForm() {
       return;
     }
 
+    if (!data.kreditorliste) {
+      setError('Du skal uploade en kreditorliste for at fortsætte.');
+      return;
+    }
+
     if (!data.acceptedTerms) {
-      setError('Du skal acceptere betingelserne for at fortsætte.');
+      const termsCheckbox = document.getElementById('terms');
+      if (termsCheckbox) {
+        termsCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'absolute mt-1 text-sm text-red-600';
+        errorDiv.textContent = 'Du skal acceptere betingelserne for at fortsætte';
+        termsCheckbox.parentElement?.parentElement?.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+      }
       return;
     }
 
@@ -158,8 +166,8 @@ export function MultiStepForm() {
           .from('companies')
           .update({ 
             status: 'COMPLETE',
-            data_period_start: data.dataPeriodStart ? new Date(data.dataPeriodStart).toISOString().split('T')[0] : null,
-            data_period_end: data.dataPeriodEnd ? new Date(data.dataPeriodEnd).toISOString().split('T')[0] : null
+            data_period_start: data.dataPeriodStart,
+            data_period_end: data.dataPeriodEnd
           })
           .eq('id', companyId);
 
@@ -323,7 +331,7 @@ export function MultiStepForm() {
                     <input
                       type="date"
                       id="dataPeriodEnd"
-                      value={data.dataPeriodEnd ? new Date(data.dataPeriodEnd).toISOString().split('T')[0] : ''}
+                      value={data.dataPeriodEnd || ''}
                       className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 cursor-not-allowed"
                       disabled
                     />
@@ -340,7 +348,7 @@ export function MultiStepForm() {
               />
 
               <div className="mt-6 space-y-4">
-                <div className="flex items-start">
+                <div className="flex items-start relative">
                   <div className="flex items-center h-5">
                     <input
                       id="terms"
@@ -352,13 +360,13 @@ export function MultiStepForm() {
                   </div>
                   <div className="ml-3">
                     <label htmlFor="terms" className="text-sm text-gray-700">
-                      Jeg accepterer betingelserne.{' '}
+                      Jeg accepterer{' '}
                       <button
                         type="button"
                         onClick={() => setShowTerms(!showTerms)}
                         className="text-blue-600 hover:text-blue-800 underline"
                       >
-                        Læs betingelserne
+                        betingelserne
                       </button>
                     </label>
                   </div>
@@ -366,7 +374,7 @@ export function MultiStepForm() {
 
                 {showTerms && (
                   <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 space-y-4">
-                    <h3 className="font-semibold text-gray-900">Indsamling af Oplysninger:</h3>
+                    <h3 className="font-semibold text-gray-900">Indsamling af oplysninger:</h3>
                     <p>Vi indsamler følgende data til brug for vores omkostningsbenchmark-rapport:</p>
                     <ul className="list-disc pl-5 space-y-1">
                       <li>Navn</li>
@@ -378,14 +386,14 @@ export function MultiStepForm() {
                       <li>Årlige udgifter til leverandører</li>
                     </ul>
 
-                    <h3 className="font-semibold text-gray-900">Behandling af Oplysninger:</h3>
+                    <h3 className="font-semibold text-gray-900">Behandling af oplysninger:</h3>
                     <ul className="list-disc pl-5 space-y-1">
                       <li>Alle indsamlede oplysninger behandles fortroligt og anonymt.</li>
                       <li>Ingen personhenførbare data vil blive delt med tredjepart.</li>
                       <li>Dine data bruges kun på aggregeret niveau til analyseformål.</li>
                     </ul>
 
-                    <h3 className="font-semibold text-gray-900">Kryptering og Sletning:</h3>
+                    <h3 className="font-semibold text-gray-900">Kryptering og sletning:</h3>
                     <ul className="list-disc pl-5 space-y-1">
                       <li>De indsendte oplysninger krypteres og opbevares sikkert.</li>
                       <li>Du kan til enhver tid anmode om sletning af dine oplysninger ved at kontakte os på kontakt@smvbenchmark.dk.</li>
