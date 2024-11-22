@@ -26,6 +26,7 @@ export function MultiStepForm() {
   const [error, setError] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
 
   const updateFields = (fields: Partial<CompanyData>) => {
     setData(prev => {
@@ -37,7 +38,7 @@ export function MultiStepForm() {
           const endDate = new Date(startDate);
           endDate.setFullYear(endDate.getFullYear() + 1);
           endDate.setDate(endDate.getDate() - 1);
-          newData.dataPeriodEnd = endDate.toISOString().split('T')[0];
+          newData.dataPeriodEnd = endDate;
         }
       }
       
@@ -59,8 +60,13 @@ export function MultiStepForm() {
       };
 
       if (currentStep === 2 && data.dataPeriodStart) {
-        stepData.data_period_start = data.dataPeriodStart;
-        stepData.data_period_end = data.dataPeriodEnd;
+        const startDate = new Date(data.dataPeriodStart);
+        const endDate = data.dataPeriodEnd ? new Date(data.dataPeriodEnd) : null;
+        
+        if (!isNaN(startDate.getTime()) && endDate && !isNaN(endDate.getTime())) {
+          stepData.data_period_start = startDate.toISOString().split('T')[0];
+          stepData.data_period_end = endDate.toISOString().split('T')[0];
+        }
       }
 
       if (companyId) {
@@ -118,21 +124,14 @@ export function MultiStepForm() {
       return;
     }
 
-    if (!data.kreditorliste) {
-      setError('Du skal uploade en kreditorliste for at fortsætte.');
-      return;
-    }
+    setShowValidation(true);
 
-    if (!data.acceptedTerms) {
-      const termsCheckbox = document.getElementById('terms');
-      if (termsCheckbox) {
-        termsCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'absolute mt-1 text-sm text-red-600';
-        errorDiv.textContent = 'Du skal acceptere betingelserne for at fortsætte';
-        termsCheckbox.parentElement?.parentElement?.appendChild(errorDiv);
-        setTimeout(() => errorDiv.remove(), 3000);
-      }
+    if (!data.kreditorliste || !data.acceptedTerms) {
+      const firstError = !data.kreditorliste 
+        ? document.getElementById('kreditorliste')?.parentElement 
+        : document.getElementById('terms')?.parentElement;
+      
+      firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -166,8 +165,8 @@ export function MultiStepForm() {
           .from('companies')
           .update({ 
             status: 'COMPLETE',
-            data_period_start: data.dataPeriodStart,
-            data_period_end: data.dataPeriodEnd
+            data_period_start: data.dataPeriodStart ? new Date(data.dataPeriodStart).toISOString().split('T')[0] : null,
+            data_period_end: data.dataPeriodEnd ? new Date(data.dataPeriodEnd).toISOString().split('T')[0] : null
           })
           .eq('id', companyId);
 
@@ -331,7 +330,7 @@ export function MultiStepForm() {
                     <input
                       type="date"
                       id="dataPeriodEnd"
-                      value={data.dataPeriodEnd || ''}
+                      value={data.dataPeriodEnd ? new Date(data.dataPeriodEnd).toISOString().split('T')[0] : ''}
                       className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 cursor-not-allowed"
                       disabled
                     />
@@ -345,63 +344,93 @@ export function MultiStepForm() {
               <FileUpload
                 onFileSelect={(file) => updateFields({ kreditorliste: file })}
                 selectedFile={data.kreditorliste}
+                showError={showValidation && !data.kreditorliste}
               />
 
               <div className="mt-6 space-y-4">
-                <div className="flex items-start relative">
+                <div className={`flex items-start relative p-4 rounded-lg transition-colors duration-200 ${
+                  showValidation && !data.acceptedTerms ? 'bg-red-50' : ''
+                }`}>
                   <div className="flex items-center h-5">
                     <input
                       id="terms"
                       type="checkbox"
                       checked={data.acceptedTerms}
                       onChange={(e) => updateFields({ acceptedTerms: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className={`h-4 w-4 focus:ring-blue-500 border-gray-300 rounded ${
+                        showValidation && !data.acceptedTerms 
+                          ? 'border-red-300 text-red-600' 
+                          : 'text-blue-600'
+                      }`}
                     />
                   </div>
                   <div className="ml-3">
-                    <label htmlFor="terms" className="text-sm text-gray-700">
+                    <label htmlFor="terms" className={`text-sm ${
+                      showValidation && !data.acceptedTerms ? 'text-red-700' : 'text-gray-700'
+                    }`}>
                       Jeg accepterer{' '}
                       <button
                         type="button"
                         onClick={() => setShowTerms(!showTerms)}
-                        className="text-blue-600 hover:text-blue-800 underline"
+                        className={`underline ${
+                          showValidation && !data.acceptedTerms 
+                            ? 'text-red-600 hover:text-red-800' 
+                            : 'text-blue-600 hover:text-blue-800'
+                        }`}
                       >
                         betingelserne
                       </button>
                     </label>
+                    {showValidation && !data.acceptedTerms && (
+                      <p className="mt-1 text-sm text-red-600">
+                        Du skal acceptere betingelserne for at fortsætte
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {showTerms && (
                   <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 space-y-4">
-                    <h3 className="font-semibold text-gray-900">Indsamling af oplysninger:</h3>
-                    <p>Vi indsamler følgende data til brug for vores omkostningsbenchmark-rapport:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Navn</li>
-                      <li>E-mail</li>
-                      <li>Firmanavn</li>
-                      <li>Antal ansatte</li>
-                      <li>Virksomhedens momsnummer (CVR-nummer)</li>
-                      <li>Leverandørliste, herunder leverandørernes CVR-numre</li>
-                      <li>Årlige udgifter til leverandører</li>
-                    </ul>
+                    <p className="font-medium">
+                      Ved at indsende dine oplysninger accepterer du følgende betingelser:
+                    </p>
 
-                    <h3 className="font-semibold text-gray-900">Behandling af oplysninger:</h3>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Alle indsamlede oplysninger behandles fortroligt og anonymt.</li>
-                      <li>Ingen personhenførbare data vil blive delt med tredjepart.</li>
-                      <li>Dine data bruges kun på aggregeret niveau til analyseformål.</li>
-                    </ul>
+                    <div>
+                      <h3 className="font-medium mb-2">Indsamling af oplysninger:</h3>
+                      <p>Vi indsamler følgende data til brug for vores omkostningsbenchmark-rapport:</p>
+                      <ul className="list-disc pl-5 mt-2 space-y-1">
+                        <li>Navn</li>
+                        <li>E-mail</li>
+                        <li>Firmanavn</li>
+                        <li>Antal ansatte</li>
+                        <li>Virksomhedens momsnummer (CVR-nummer)</li>
+                        <li>Leverandørliste, herunder leverandørernes CVR-numre</li>
+                        <li>Årlige udgifter til leverandører</li>
+                      </ul>
+                    </div>
 
-                    <h3 className="font-semibold text-gray-900">Kryptering og sletning:</h3>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>De indsendte oplysninger krypteres og opbevares sikkert.</li>
-                      <li>Du kan til enhver tid anmode om sletning af dine oplysninger ved at kontakte os på kontakt@smvbenchmark.dk.</li>
-                    </ul>
+                    <div>
+                      <h3 className="font-medium mb-2">Behandling af oplysninger:</h3>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Alle indsamlede oplysninger behandles fortroligt og anonymt.</li>
+                        <li>Ingen personhenførbare data vil blive delt med tredjepart.</li>
+                        <li>Dine data bruges kun på aggregeret niveau til analyseformål.</li>
+                      </ul>
+                    </div>
 
-                    <h3 className="font-semibold text-gray-900">Ansvarsfraskrivelse:</h3>
-                    <p>Ved at klikke på "Indsend" bekræfter du, at de oplysninger, du har givet, er korrekte og tilhører dig eller din virksomhed.</p>
-                    <p>Hvis du har spørgsmål til, hvordan vi behandler dine data, kan du kontakte os på kontakt@smvbenchmark.dk.</p>
+                    <div>
+                      <h3 className="font-medium mb-2">Kryptering og sletning:</h3>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>De indsendte oplysninger krypteres og opbevares sikkert.</li>
+                        <li>Du kan til enhver tid anmode om sletning af dine oplysninger ved at kontakte os på kontakt@smvbenchmark.dk.</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="font-medium mb-2">Ansvarsfraskrivelse:</h3>
+                      <p>Ved at klikke på "Indsend" bekræfter du, at de oplysninger, du har givet, er korrekte og tilhører dig eller din virksomhed.</p>
+                      <p className="mt-2">Hvis du har spørgsmål til, hvordan vi behandler dine data, kan du kontakte os på kontakt@smvbenchmark.dk.</p>
+                    </div>
                   </div>
                 )}
               </div>

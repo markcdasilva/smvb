@@ -4,9 +4,10 @@ import { Upload, FileWarning, CheckCircle2 } from 'lucide-react';
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
   selectedFile: File | undefined;
+  showError: boolean;
 }
 
-export function FileUpload({ onFileSelect, selectedFile }: FileUploadProps) {
+export function FileUpload({ onFileSelect, selectedFile, showError }: FileUploadProps) {
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -56,7 +57,11 @@ export function FileUpload({ onFileSelect, selectedFile }: FileUploadProps) {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
-          selectedFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-blue-500'
+          selectedFile 
+            ? 'border-green-300 bg-green-50' 
+            : showError
+              ? 'border-red-300 bg-red-50'
+              : 'border-gray-300 hover:border-blue-500'
         }`}
       >
         <input
@@ -71,12 +76,12 @@ export function FileUpload({ onFileSelect, selectedFile }: FileUploadProps) {
           htmlFor="kreditorliste"
           className="cursor-pointer flex flex-col items-center space-y-4"
         >
-          <Upload className="h-12 w-12 text-gray-400" />
+          <Upload className={`h-12 w-12 ${showError ? 'text-red-400' : 'text-gray-400'}`} />
           <div className="space-y-2">
-            <p className="text-lg font-medium text-gray-700">
-              Træk din fil hertil eller klik for at vælge
+            <p className={`text-lg font-medium ${showError ? 'text-red-700' : 'text-gray-700'}`}>
+              {showError ? 'Du skal uploade en kreditorliste' : 'Træk din fil hertil eller klik for at vælge'}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className={`text-sm ${showError ? 'text-red-500' : 'text-gray-500'}`}>
               Understøttede filtyper: CSV, XLS, XLSX (Max. 10MB)
             </p>
           </div>
