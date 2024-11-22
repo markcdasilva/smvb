@@ -24,20 +24,20 @@ export function About() {
             </p>
             <p className="text-lg text-gray-600 leading-relaxed">
               Derfor har jeg skabt SMV Benchmark – et gratis værktøj, der hjælper små og mellemstore 
-              virksomheder med at optimere deres omkostninger gennem anonymiseret sammenligning med 
-              andre virksomheder.
+              virksomheder, inklusiv vores egen, med at optimere deres omkostninger gennem anonymiseret 
+              sammenligning med andre virksomheder.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <Users className="h-8 w-8 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">+500 Virksomhed</h3>
+              <h3 className="text-xl font-semibold mb-2">+100 virksomheder</h3>
               <p className="text-gray-600">Forventes at deltage i benchmark-programmet</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <BarChart2 className="h-8 w-8 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">+100 Leverandører</h3>
+              <h3 className="text-xl font-semibold mb-2">+50 leverandører</h3>
               <p className="text-gray-600">Forventes at blive sammenlignet i programmet</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">

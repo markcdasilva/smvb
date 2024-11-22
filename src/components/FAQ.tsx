@@ -47,10 +47,10 @@ export function FAQ() {
     },
     {
       question: 'Hvad koster det?',
-      answer: 'SMV Benchmark er 100% gratis at bruge. Det er startet for at hjælpe små og mellemstore danske virksomheder med at blive mere konkurrencedygtige. Der er ingen skjulte gebyrer eller fremtidige omkostninger.'
+      answer: 'SMV Benchmark er 100% gratis at bruge. Det er startet for at hjælpe små og mellemstore danske virksomheder, inklusiv vores egen, med at blive mere konkurrencedygtige. Der er ingen skjulte gebyrer eller fremtidige omkostninger.'
     },
     {
-      question: 'Hvornår får jeg min benchmark-rapport?',
+      question: 'Hvornår får jeg min rapport?',
       answer: 'Du kan forvente at modtage din rapport i starten af 2025 – og senest tre måneder efter indsendelse.'
     }
   ];

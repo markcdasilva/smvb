@@ -9,7 +9,7 @@ export function Benefits() {
           <div className="bg-gray-50 rounded-lg p-8">
             <div className="flex items-center mb-4">
               <PiggyBank className="h-8 w-8 text-blue-600" />
-              <h3 className="ml-4 text-xl font-semibold">Identificér besparelser</h3>
+              <h3 className="ml-4 text-xl font-semibold">Skjulte besparelser</h3>
             </div>
             <p className="text-gray-600">
               Få konkret indsigt i dine indirekte omkostninger og find ud af, hvor du kan reducere udgifterne. Virksomheder kan typisk spare 20% per kategori, som triller direkte ned på bundlinjen.

@@ -5,6 +5,7 @@ import { FileUpload } from './FileUpload';
 import type { CompanyData } from '../types';
 import { supabase } from '../lib/supabase-client';
 import { encrypt } from '../lib/encryption';
+import { trackFormStep, trackFormCompletion } from '../lib/analytics';
 
 const INITIAL_DATA: CompanyData = {
   companyName: '',
@@ -28,7 +29,6 @@ export function MultiStepForm() {
     setData(prev => {
       const newData = { ...prev, ...fields };
       
-      // If start date is updated, adjust end date
       if (fields.dataPeriodStart) {
         const startDate = new Date(fields.dataPeriodStart);
         if (!isNaN(startDate.getTime())) {
@@ -45,7 +45,6 @@ export function MultiStepForm() {
 
   const saveToSupabase = async () => {
     try {
-      // Basic data for steps 1 and 2
       const stepData: any = {
         company_name: encrypt(data.companyName),
         cvr: encrypt(data.cvr),
@@ -57,7 +56,6 @@ export function MultiStepForm() {
         status: 'INCOMPLETE'
       };
 
-      // Only add dates if we're on step 3 and dates are valid
       if (currentStep === 2 && data.dataPeriodStart) {
         const startDate = new Date(data.dataPeriodStart);
         const endDate = data.dataPeriodEnd ? new Date(data.dataPeriodEnd) : null;
@@ -95,6 +93,15 @@ export function MultiStepForm() {
     try {
       setStatus('submitting');
       await saveToSupabase();
+      
+      trackFormStep(currentStep + 1, {
+        company_name: data.companyName,
+        cvr: data.cvr,
+        employees: data.employees,
+        contact_person: data.contactPerson,
+        email: data.email
+      });
+      
       setCurrentStep(i => (i >= 2 ? i : i + 1));
       setStatus('idle');
     } catch (err: any) {
@@ -140,7 +147,6 @@ export function MultiStepForm() {
 
         if (fileRecordError) throw fileRecordError;
 
-        // Update status to COMPLETE only after file upload
         const { error: statusError } = await supabase
           .from('companies')
           .update({ 
@@ -152,6 +158,17 @@ export function MultiStepForm() {
 
         if (statusError) throw statusError;
       }
+
+      trackFormCompletion({
+        company_name: data.companyName,
+        cvr: data.cvr,
+        employees: data.employees,
+        contact_person: data.contactPerson,
+        email: data.email,
+        has_file: !!data.kreditorliste,
+        data_period_start: data.dataPeriodStart,
+        data_period_end: data.dataPeriodEnd
+      });
 
       setStatus('success');
       setData(INITIAL_DATA);
