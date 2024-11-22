@@ -53,39 +53,46 @@ export function FileUpload({ onFileSelect, selectedFile, showError }: FileUpload
 
   return (
     <div className="space-y-4">
-      <div
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
-          selectedFile 
-            ? 'border-green-300 bg-green-50' 
-            : showError
-              ? 'border-red-300 bg-red-50'
-              : 'border-gray-300 hover:border-blue-500'
-        }`}
-      >
-        <input
-          type="file"
-          id="kreditorliste"
-          onChange={handleFileSelect}
-          accept=".csv,.xls,.xlsx"
-          className="hidden"
-          required
-        />
-        <label
-          htmlFor="kreditorliste"
-          className="cursor-pointer flex flex-col items-center space-y-4"
+      <div className="relative">
+        <div
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
+            selectedFile 
+              ? 'border-green-300 bg-green-50' 
+              : showError
+                ? 'border-red-300 bg-red-50'
+                : 'border-gray-300 hover:border-blue-500'
+          }`}
         >
-          <Upload className={`h-12 w-12 ${showError ? 'text-red-400' : 'text-gray-400'}`} />
-          <div className="space-y-2">
-            <p className={`text-lg font-medium ${showError ? 'text-red-700' : 'text-gray-700'}`}>
-              {showError ? 'Du skal uploade en kreditorliste' : 'Træk din fil hertil eller klik for at vælge'}
-            </p>
-            <p className={`text-sm ${showError ? 'text-red-500' : 'text-gray-500'}`}>
-              Understøttede filtyper: CSV, XLS, XLSX (Max. 10MB)
-            </p>
-          </div>
-        </label>
+          <input
+            type="file"
+            id="kreditorliste"
+            onChange={handleFileSelect}
+            accept=".csv,.xls,.xlsx"
+            className="hidden"
+            required
+          />
+          <label
+            htmlFor="kreditorliste"
+            className="cursor-pointer flex flex-col items-center space-y-4"
+          >
+            <Upload className={`h-12 w-12 ${showError ? 'text-red-400' : 'text-gray-400'}`} />
+            <div className="space-y-2">
+              <p className={`text-lg font-medium ${showError ? 'text-red-700' : 'text-gray-700'}`}>
+                {showError ? 'Du skal uploade en kreditorliste' : 'Træk din fil hertil eller klik for at vælge'}
+              </p>
+              <p className={`text-sm ${showError ? 'text-red-500' : 'text-gray-500'}`}>
+                Understøttede filtyper: CSV, XLS, XLSX (Max. 10MB)
+              </p>
+            </div>
+          </label>
+        </div>
+        {showError && (
+          <p className="absolute -bottom-6 left-0 text-sm text-red-600">
+            Du skal uploade en kreditorliste
+          </p>
+        )}
       </div>
 
       {selectedFile && (
