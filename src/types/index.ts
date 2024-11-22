@@ -8,4 +8,5 @@ export interface CompanyData {
   dataPeriodStart: string | null;
   dataPeriodEnd: string | null;
   status?: 'INCOMPLETE' | 'COMPLETE';
+  acceptedTerms?: boolean;
 }

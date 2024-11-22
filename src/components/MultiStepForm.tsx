@@ -15,7 +15,8 @@ const INITIAL_DATA: CompanyData = {
   email: '',
   dataPeriodStart: null,
   dataPeriodEnd: null,
-  status: 'INCOMPLETE'
+  status: 'INCOMPLETE',
+  acceptedTerms: false
 };
 
 export function MultiStepForm() {
@@ -24,6 +25,7 @@ export function MultiStepForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [showTerms, setShowTerms] = useState(false);
 
   const updateFields = (fields: Partial<CompanyData>) => {
     setData(prev => {
@@ -118,6 +120,11 @@ export function MultiStepForm() {
     e.preventDefault();
     if (currentStep < 2) {
       await next();
+      return;
+    }
+
+    if (!data.acceptedTerms) {
+      setError('Du skal acceptere betingelserne for at fortsætte.');
       return;
     }
 
@@ -331,6 +338,65 @@ export function MultiStepForm() {
                 onFileSelect={(file) => updateFields({ kreditorliste: file })}
                 selectedFile={data.kreditorliste}
               />
+
+              <div className="mt-6 space-y-4">
+                <div className="flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="terms"
+                      type="checkbox"
+                      checked={data.acceptedTerms}
+                      onChange={(e) => updateFields({ acceptedTerms: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                  <div className="ml-3">
+                    <label htmlFor="terms" className="text-sm text-gray-700">
+                      Jeg accepterer betingelserne.{' '}
+                      <button
+                        type="button"
+                        onClick={() => setShowTerms(!showTerms)}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Læs betingelserne
+                      </button>
+                    </label>
+                  </div>
+                </div>
+
+                {showTerms && (
+                  <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 space-y-4">
+                    <h3 className="font-semibold text-gray-900">Indsamling af Oplysninger:</h3>
+                    <p>Vi indsamler følgende data til brug for vores omkostningsbenchmark-rapport:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Navn</li>
+                      <li>E-mail</li>
+                      <li>Firmanavn</li>
+                      <li>Antal ansatte</li>
+                      <li>Virksomhedens momsnummer (CVR-nummer)</li>
+                      <li>Leverandørliste, herunder leverandørernes CVR-numre</li>
+                      <li>Årlige udgifter til leverandører</li>
+                    </ul>
+
+                    <h3 className="font-semibold text-gray-900">Behandling af Oplysninger:</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Alle indsamlede oplysninger behandles fortroligt og anonymt.</li>
+                      <li>Ingen personhenførbare data vil blive delt med tredjepart.</li>
+                      <li>Dine data bruges kun på aggregeret niveau til analyseformål.</li>
+                    </ul>
+
+                    <h3 className="font-semibold text-gray-900">Kryptering og Sletning:</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>De indsendte oplysninger krypteres og opbevares sikkert.</li>
+                      <li>Du kan til enhver tid anmode om sletning af dine oplysninger ved at kontakte os på kontakt@smvbenchmark.dk.</li>
+                    </ul>
+
+                    <h3 className="font-semibold text-gray-900">Ansvarsfraskrivelse:</h3>
+                    <p>Ved at klikke på "Indsend" bekræfter du, at de oplysninger, du har givet, er korrekte og tilhører dig eller din virksomhed.</p>
+                    <p>Hvis du har spørgsmål til, hvordan vi behandler dine data, kan du kontakte os på kontakt@smvbenchmark.dk.</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
