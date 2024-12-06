@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signIn } from '../../lib/auth';
 import { TrendingUp } from 'lucide-react';
+import { AuthService } from '../../lib/services/auth.service';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,9 +16,8 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const { session, error } = await signIn(email, password);
+      const { session } = await AuthService.signIn(email, password);
       
-      if (error) throw error;
       if (session) {
         navigate('/admin');
       } else {

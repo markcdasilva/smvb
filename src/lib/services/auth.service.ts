@@ -1,4 +1,5 @@
 import { supabase } from '../supabase-client';
+import type { Session } from '@supabase/supabase-js';
 
 export class AuthService {
   static async signIn(email: string, password: string) {
@@ -27,14 +28,20 @@ export class AuthService {
     }
   }
 
-  static async getSession() {
+  static async getSession(): Promise<Session | null> {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
       return session;
     } catch (error) {
       console.error('Session retrieval error:', error);
-      throw error;
+      return null;
     }
+  }
+
+  static onAuthStateChange(callback: (session: Session | null) => void) {
+    return supabase.auth.onAuthStateChange((_event, session) => {
+      callback(session);
+    });
   }
 }
