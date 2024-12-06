@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { StepIndicator } from './StepIndicator';
 import { FileUpload } from './FileUpload';
 import type { CompanyData } from '../types';
+import { saveCompanyData } from '../lib/api';
 import { supabase } from '../lib/supabase-client';
 import { encrypt } from '../lib/encryption';
 import { trackFormStep, trackFormCompletion } from '../lib/analytics';
@@ -48,47 +49,20 @@ export function MultiStepForm() {
 
   const saveToSupabase = async () => {
     try {
-      const stepData: any = {
-        company_name: encrypt(data.companyName),
-        cvr: encrypt(data.cvr),
+      const stepData = {
+        companyName: data.companyName,
+        cvr: data.cvr,
         employees: data.employees,
-        contact_person: encrypt(data.contactPerson),
-        email: encrypt(data.email),
-        ip_address: window.location.hostname,
-        user_agent: navigator.userAgent,
-        status: 'INCOMPLETE'
+        contactPerson: data.contactPerson,
+        email: data.email,
+        status: 'INCOMPLETE' as const
       };
 
-      if (currentStep === 2 && data.dataPeriodStart) {
-        const startDate = new Date(data.dataPeriodStart);
-        const endDate = data.dataPeriodEnd ? new Date(data.dataPeriodEnd) : null;
-        
-        if (!isNaN(startDate.getTime()) && endDate && !isNaN(endDate.getTime())) {
-          stepData.data_period_start = startDate.toISOString().split('T')[0];
-          stepData.data_period_end = endDate.toISOString().split('T')[0];
-        }
-      }
-
-      if (companyId) {
-        const { error } = await supabase
-          .from('companies')
-          .update(stepData)
-          .eq('id', companyId);
-
-        if (error) throw error;
-      } else {
-        const { data: newCompany, error } = await supabase
-          .from('companies')
-          .insert([stepData])
-          .select()
-          .single();
-
-        if (error) throw error;
-        setCompanyId(newCompany.id);
-      }
-    } catch (err) {
+      const result = await saveCompanyData(stepData);
+      setCompanyId(result.id);
+    } catch (err: any) {
       console.error('Error saving to Supabase:', err);
-      throw err;
+      throw new Error(err.message || 'Der opstod en fejl. Prøv venligst igen.');
     }
   };
 
@@ -126,7 +100,6 @@ export function MultiStepForm() {
 
     setShowValidation(true);
 
-    // Check for required fields
     if (!data.dataPeriodStart) {
       document.getElementById('dataPeriodStart')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
