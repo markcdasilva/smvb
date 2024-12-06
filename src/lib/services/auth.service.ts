@@ -1,30 +1,47 @@
 import { supabase } from '../supabase-client';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, AuthError } from '@supabase/supabase-js';
+
+export interface AuthResponse {
+  session: Session | null;
+  error: AuthError | null;
+}
 
 export class AuthService {
-  static async signIn(email: string, password: string) {
+  static async signIn(email: string, password: string): Promise<AuthResponse> {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Authentication error:', error);
-      throw error;
+      return {
+        session: data?.session || null,
+        error: error
+      };
+    } catch (error: any) {
+      return {
+        session: null,
+        error: {
+          name: 'AuthError',
+          message: error.message || 'An error occurred during sign in',
+          status: error.status || 500
+        }
+      };
     }
   }
 
-  static async signOut() {
+  static async signOut(): Promise<{ error: AuthError | null }> {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      window.localStorage.removeItem('smvb-auth-token');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
+      return { error };
+    } catch (error: any) {
+      return {
+        error: {
+          name: 'AuthError',
+          message: error.message || 'An error occurred during sign out',
+          status: error.status || 500
+        }
+      };
     }
   }
 

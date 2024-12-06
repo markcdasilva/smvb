@@ -16,8 +16,9 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const { session } = await AuthService.signIn(email, password);
+      const { session, error } = await AuthService.signIn(email, password);
       
+      if (error) throw error;
       if (session) {
         navigate('/admin');
       } else {
