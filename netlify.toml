@@ -26,12 +26,12 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     Content-Security-Policy = """
-      default-src 'self' https://zgoxbcxwlndzloyonbon.supabase.co;
-      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      default-src 'self' https://*.supabase.co;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.klaviyo.com https://www.googletagmanager.com;
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: https:;
       font-src 'self' data:;
-      connect-src 'self' https://zgoxbcxwlndzloyonbon.supabase.co wss://zgoxbcxwlndzloyonbon.supabase.co https://formsubmit.co;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://formsubmit.co;
       frame-ancestors 'none';
       form-action 'self' https://formsubmit.co;
     """
