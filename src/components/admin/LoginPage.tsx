@@ -16,8 +16,14 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
-      navigate('/admin');
+      const { session, error } = await signIn(email, password);
+      
+      if (error) throw error;
+      if (session) {
+        navigate('/admin');
+      } else {
+        throw new Error('No session returned after login');
+      }
     } catch (err: any) {
       setError(err.message || 'Der opstod en fejl under login');
     } finally {
