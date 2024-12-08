@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutDashboard } from 'lucide-react';
-import { AuthService } from '../../lib/services/auth.service';
-import { supabase } from '../../lib/supabase-client';
+import { signOut } from '../../lib/auth';
+import { supabase } from '../../lib/auth';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   useEffect(() => {
     const checkSession = async () => {
-      const session = await AuthService.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/admin/login');
       }
@@ -34,7 +34,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const handleSignOut = async () => {
     try {
-      await AuthService.signOut();
+      await signOut();
       navigate('/admin/login');
     } catch (error) {
       console.error('Error signing out:', error);

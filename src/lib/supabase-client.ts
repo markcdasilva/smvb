@@ -1,67 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
-import { env } from './config/env.config';
-import { supabaseConfig, type SupabaseDatabase } from './config/supabase.config';
-import { withRetry } from './utils/retry';
-import { formatDatabaseError } from './utils/error-formatter';
+import type { Database } from './database.types';
 
-class SupabaseClient {
-  private client;
-  private connectionStatus: 'connecting' | 'connected' | 'error' = 'connecting';
-  
-  constructor() {
-    this.client = createClient<SupabaseDatabase>(
-      env.supabaseUrl,
-      env.supabaseAnonKey,
-      supabaseConfig
-    );
+// Ensure we're using the correct environment variables in production
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    this.testConnection();
-  }
-
-  private async testConnection() {
-    try {
-      const { error } = await this.client.from('companies')
-        .select('id', { count: 'exact', head: true });
-      
-      if (error) throw error;
-      this.connectionStatus = 'connected';
-    } catch (error) {
-      this.connectionStatus = 'error';
-      console.error('Supabase connection test failed:', formatDatabaseError(error));
-    }
-  }
-
-  async query<T>(operation: () => Promise<T>): Promise<T> {
-    if (this.connectionStatus === 'error') {
-      throw new Error('Database connection is not available. Please check your configuration.');
-    }
-
-    return withRetry(
-      operation,
-      0,
-      (error, attempt) => {
-        console.warn(`Attempt ${attempt} failed, retrying:`, formatDatabaseError(error));
-      }
-    ).catch(error => {
-      throw formatDatabaseError(error);
-    });
-  }
-
-  get auth() {
-    return this.client.auth;
-  }
-
-  get storage() {
-    return this.client.storage;
-  }
-
-  from(table: string) {
-    return this.client.from(table);
-  }
-
-  getConnectionStatus() {
-    return this.connectionStatus;
-  }
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase environment variables missing:', {
+    url: !!supabaseUrl,
+    key: !!supabaseAnonKey
+  });
+  throw new Error('Missing Supabase environment variables. Please check your environment configuration.');
 }
 
-export const supabase = new SupabaseClient();
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined
+  }
+});

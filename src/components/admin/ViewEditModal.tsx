@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, Trash2, Download } from 'lucide-react';
-import { supabase } from '../../lib/supabase-client';
+import { supabase } from '../../lib/auth';
 import { encrypt } from '../../lib/encryption';
 
 interface ViewEditModalProps {
