@@ -17,7 +17,7 @@ export function About() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <p className="text-lg text-gray-600 leading-relaxed">
-              Mit navn er Mark, og jeg er CFO i dansk familieejet SMV indenfor medicoteknologi. 
+              Mit navn er Mark, og jeg er CFO i en dansk familieejet SMV indenfor medicoteknologi. 
               Efter mange års erfaring med leverandørforhandlinger har jeg set, at mange virksomheder 
               betaler vidt forskellige priser for samme ydelser – og de fleste små og mellemstore 
               virksomheder får ofte lov til at betale mest.
