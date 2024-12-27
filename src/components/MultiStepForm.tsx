@@ -87,7 +87,7 @@ export function MultiStepForm() {
         setCompanyId(newCompany.id);
       }
     } catch (err) {
-      console.error('Error saving to Supabase:', err);
+      console.error('Der opstod en fejl ved gemning af data');
       throw err;
     }
   };

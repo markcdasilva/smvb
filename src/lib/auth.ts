@@ -15,8 +15,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     storage: window.localStorage,
-    storageKey: 'smvb-auth-token',
-    redirectTo: `${siteUrl}/admin/login`
+    storageKey: 'smvb-auth-token'
   }
 });
 
@@ -75,6 +74,6 @@ export const getSession = async () => {
 };
 
 // Add session state change listener
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', { event, session });
+supabase.auth.onAuthStateChange((event) => {
+  console.log('Auth state changed:', event);
 });
