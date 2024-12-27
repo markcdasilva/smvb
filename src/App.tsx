@@ -11,6 +11,7 @@ import { Footer } from './components/Footer';
 import { LoginPage } from './components/admin/LoginPage';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { CompanyList } from './components/admin/CompanyList';
+import { CostOptimization } from './components/CostOptimization';
 import { useAuth } from './hooks/useAuth';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -69,6 +70,7 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/omkostningsoptimering" element={<CostOptimization />} />
         <Route path="/admin/login" element={<LoginPage />} />
         <Route
           path="/admin/*"
