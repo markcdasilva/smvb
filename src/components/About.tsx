@@ -17,15 +17,18 @@ export function About() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <p className="text-lg text-gray-600 leading-relaxed">
-              Mit navn er Mark Hvidberg, og jeg er CFO i en mellemstor dansk fremstillingsvirksomhed. 
+              Mit navn er Mark, og jeg er CFO i dansk familieejet SMV indenfor medicoteknologi. 
               Efter mange års erfaring med leverandørforhandlinger har jeg set, at mange virksomheder 
               betaler vidt forskellige priser for samme ydelser – og de fleste små og mellemstore 
               virksomheder får ofte lov til at betale mest.
             </p>
             <p className="text-lg text-gray-600 leading-relaxed">
-              Derfor har jeg skabt SMV Benchmark – et gratis værktøj, der hjælper små og mellemstore 
+              Derfor har jeg skabt SMV Benchmark – et 100% gratis værktøj, der hjælper små og mellemstore 
               virksomheder, inklusiv vores egen, med at optimere deres omkostninger gennem anonymiseret 
               sammenligning med andre virksomheder.
+            </p>
+            <p className="text-lg text-gray-600 leading-relaxed">
+              Jeg håber, at I har lyst til at være med.
             </p>
           </div>
 
