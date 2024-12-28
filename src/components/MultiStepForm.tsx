@@ -12,6 +12,7 @@ declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
     lintrk?: (...args: any[]) => void;
+    _learnq?: any[];
   }
 }
 
@@ -186,7 +187,7 @@ export function MultiStepForm() {
 
         if (statusError) throw statusError;
 
-        // Send alle completion events efter vellykket database opdatering
+        // Send tracking events efter vellykket database opdatering
         trackFormCompletion({
           company_name: data.companyName,
           cvr: data.cvr,
@@ -198,40 +199,36 @@ export function MultiStepForm() {
           data_period_end: data.dataPeriodEnd
         });
 
-        // Send alle Google Analytics events
+        // Send Google Analytics events
         if (window.gtag) {
-          // Step 1 completion
-          window.gtag('event', 'step_1_complete', {
-            'event_category': 'Forms',
-            'event_label': 'Virksomhedsoplysninger færdig',
-            'value': 1
-          });
-          // Step 2 completion
-          window.gtag('event', 'step_2_complete', {
-            'event_category': 'Forms',
-            'event_label': 'Kontaktoplysninger færdig',
-            'value': 2
-          });
-          // Step 3 completion
-          window.gtag('event', 'step_3_complete', {
-            'event_category': 'Forms',
-            'event_label': 'Upload og betingelser færdig',
-            'value': 3
-          });
-          // Final completion
-          window.gtag('event', 'form_completion', {
-            'event_category': 'Forms',
-            'event_label': 'MultiStep Form færdig',
-            'value': data.employees
-          });
+          window.gtag('event', 'step_1_complete');
+          window.gtag('event', 'step_2_complete');
+          window.gtag('event', 'step_3_complete');
         }
 
-        // Send alle LinkedIn completion events
+        // Send LinkedIn completion events
         if (window.lintrk) {
-          window.lintrk('track', { conversion_id: 'STEP_1_COMPLETION_ID' });
-          window.lintrk('track', { conversion_id: 'STEP_2_COMPLETION_ID' });
-          window.lintrk('track', { conversion_id: 'STEP_3_COMPLETION_ID' });
-          window.lintrk('track', { conversion_id: 'LINKEDIN_CONVERSION_ID' });
+          window.lintrk('track', { conversion_id: 20840785 }); // Step 1
+          window.lintrk('track', { conversion_id: 20840793 }); // Step 2
+          window.lintrk('track', { conversion_id: 20840801 }); // Step 3
+        }
+
+        // Send Klaviyo completion events
+        if (window._learnq) {
+          window._learnq.push(['track', 'Step 1 Complete', {
+            'Email': data.email,
+            'Name': data.contactPerson
+          }]);
+          
+          window._learnq.push(['track', 'Step 2 Complete', {
+            'Email': data.email,
+            'Name': data.contactPerson
+          }]);
+          
+          window._learnq.push(['track', 'Step 3 Complete', {
+            'Email': data.email,
+            'Name': data.contactPerson
+          }]);
         }
       }
 
