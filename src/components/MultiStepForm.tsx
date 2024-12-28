@@ -7,6 +7,14 @@ import { supabase } from '../lib/supabase-client';
 import { encrypt } from '../lib/encryption';
 import { trackFormStep, trackFormCompletion } from '../lib/analytics';
 
+// Tilføj Google Analytics og LinkedIn tracking funktioner
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+    lintrk?: (...args: any[]) => void;
+  }
+}
+
 const INITIAL_DATA: CompanyData = {
   companyName: '',
   cvr: '',
@@ -177,18 +185,55 @@ export function MultiStepForm() {
           .eq('id', companyId);
 
         if (statusError) throw statusError;
-      }
 
-      trackFormCompletion({
-        company_name: data.companyName,
-        cvr: data.cvr,
-        employees: data.employees,
-        contact_person: data.contactPerson,
-        email: data.email,
-        has_file: !!data.kreditorliste,
-        data_period_start: data.dataPeriodStart,
-        data_period_end: data.dataPeriodEnd
-      });
+        // Send alle completion events efter vellykket database opdatering
+        trackFormCompletion({
+          company_name: data.companyName,
+          cvr: data.cvr,
+          employees: data.employees,
+          contact_person: data.contactPerson,
+          email: data.email,
+          has_file: !!data.kreditorliste,
+          data_period_start: data.dataPeriodStart,
+          data_period_end: data.dataPeriodEnd
+        });
+
+        // Send alle Google Analytics events
+        if (window.gtag) {
+          // Step 1 completion
+          window.gtag('event', 'step_1_complete', {
+            'event_category': 'Forms',
+            'event_label': 'Virksomhedsoplysninger færdig',
+            'value': 1
+          });
+          // Step 2 completion
+          window.gtag('event', 'step_2_complete', {
+            'event_category': 'Forms',
+            'event_label': 'Kontaktoplysninger færdig',
+            'value': 2
+          });
+          // Step 3 completion
+          window.gtag('event', 'step_3_complete', {
+            'event_category': 'Forms',
+            'event_label': 'Upload og betingelser færdig',
+            'value': 3
+          });
+          // Final completion
+          window.gtag('event', 'form_completion', {
+            'event_category': 'Forms',
+            'event_label': 'MultiStep Form færdig',
+            'value': data.employees
+          });
+        }
+
+        // Send alle LinkedIn completion events
+        if (window.lintrk) {
+          window.lintrk('track', { conversion_id: 'STEP_1_COMPLETION_ID' });
+          window.lintrk('track', { conversion_id: 'STEP_2_COMPLETION_ID' });
+          window.lintrk('track', { conversion_id: 'STEP_3_COMPLETION_ID' });
+          window.lintrk('track', { conversion_id: 'LINKEDIN_CONVERSION_ID' });
+        }
+      }
 
       setStatus('success');
       setData(INITIAL_DATA);
