@@ -201,9 +201,15 @@ export function MultiStepForm() {
 
         // Send Google Analytics events
         if (window.gtag) {
-          window.gtag('event', 'step_1_complete');
-          window.gtag('event', 'step_2_complete');
-          window.gtag('event', 'step_3_complete');
+          window.gtag('event', 'step_1_complete', {
+            'event_name': 'step_1_complete'
+          });
+          window.gtag('event', 'step_2_complete', {
+            'event_name': 'step_2_complete'
+          });
+          window.gtag('event', 'step_3_complete', {
+            'event_name': 'step_3_complete'
+          });
         }
 
         // Send LinkedIn completion events
