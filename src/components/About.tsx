@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, BarChart2, TrendingUp } from 'lucide-react';
+import profileImage from '../assets/profile.jpg';
 
 export function About() {
   return (
@@ -16,20 +17,25 @@ export function About() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
+            <div className="flex flex-col items-center mb-8">
+              <img 
+                src={profileImage} 
+                alt="Mark - CFO" 
+                className="w-40 h-40 rounded-full object-cover shadow-lg mb-6"
+              />
+            </div>
             <p className="text-lg text-gray-600 leading-relaxed">
-              Mit navn er Mark, og jeg er CFO i en dansk familieejet SMV indenfor medicoteknologi. 
+              Mit navn er Mark Hvidberg da Silva, og jeg er CFO i en dansk familieejet SMV indenfor medicoteknologi. 
               Efter mange års erfaring med leverandørforhandlinger har jeg set, at mange virksomheder 
-              betaler vidt forskellige priser for samme ydelser – og de fleste små og mellemstore 
+              betaler vidt forskellige priser for de samme ydelser – og de fleste små og mellemstore 
               virksomheder får ofte lov til at betale mest.
             </p>
             <p className="text-lg text-gray-600 leading-relaxed">
-              Derfor har jeg skabt SMV Benchmark – et 100% gratis værktøj, der hjælper små og mellemstore 
+              Derfor har jeg skabt SMV Benchmark – en 100% gratis undersøgelse, der hjælper små og mellemstore 
               virksomheder, inklusiv vores egen, med at optimere deres omkostninger gennem anonymiseret 
               sammenligning med andre virksomheder.
             </p>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Jeg håber, at I har lyst til at være med.
-            </p>
+
           </div>
 
           <div className="grid grid-cols-1 gap-6">

@@ -50,8 +50,12 @@ export function FAQ() {
       answer: 'SMV Benchmark er 100% gratis at bruge. Det er startet for at hjælpe små og mellemstore danske virksomheder, inklusiv vores egen, med at blive mere konkurrencedygtige. Der er ingen skjulte gebyrer eller fremtidige omkostninger.'
     },
     {
+      question: 'Kan jeg købe rapporten uden at bidrage til undersøgelsen?',
+      answer: 'Nej. Det er kun muligt at få en rapport ved at bidrage til undersøgelsen.'
+    },
+    {
       question: 'Hvornår får jeg min rapport?',
-      answer: 'Du kan forvente at modtage din rapport i starten af 2025 – og senest tre måneder efter indsendelse.'
+      answer: 'Du kan forvente at modtage din rapport i løbet af 2025 – og senest tre måneder efter indsendelse.'
     }
   ];
 
