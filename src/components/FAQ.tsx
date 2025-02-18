@@ -55,7 +55,7 @@ export function FAQ() {
     },
     {
       question: 'Hvornår får jeg min rapport?',
-      answer: 'Du kan forvente at modtage din rapport i løbet af 2025 – og senest tre måneder efter indsendelse.'
+      answer: 'Du kan forvente at modtage din rapportsenest tre måneder efter indsendelse.'
     }
   ];
 
