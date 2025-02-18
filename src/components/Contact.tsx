@@ -23,7 +23,7 @@ export function Contact() {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Kontakt os</h2>
           <p className="mt-4 text-lg text-gray-600">
-            Skriv endelig, hvis du har nogle spørgsmål :-)
+            Skriv endelig, hvis du har nogle spørgsmål.
           </p>
         </div>
 
